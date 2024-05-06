@@ -1,25 +1,24 @@
 {pkgs ? import <nixpkgs> {}}:
 with pkgs;
   mkShell {
+    nativeBuildInputs = [flex bison gsl];
     buildInputs = [
       nixpkgs-fmt
-      # (callPackage ./package.nix {})
+      (callPackage ./package.nix {})
       gdb
       gcc
       gpp
       lldb
       clang
-      boost.dev
-      boost.out
+      boost
       flex
       bison
-      bisoncpp
       gsl
       mercurial
     ];
 
-    BOOST_LDFLAGS = "-L${boost}/lib";
+    configureFlags = ["BOOST_LDFLAGS=-L${boost}/lib"];
     shellHook = ''
-      # ./configure --prefix=$(pwd)/debug --with-boost=yes
+      ./configure --prefix=$(pwd)/debug --with-boost=yes
     '';
   }
