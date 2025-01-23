@@ -194,7 +194,7 @@ class Increase : public Base {
 };
 
 /**
- * @example q.submit([&](sycl::handler &cgh) { ... } 
+ * @example q.submit([&](sycl::handler &cgh) { ... }); 
  * @brief Submit Kernel
  * @param q The Queue to add the Kernel to
  * @param c The Context Handler for the Kernel
@@ -222,10 +222,13 @@ class SYCL_Submit_Kernel : public Block_Base {
   public:
     ::Type::Base *type;
     int dimension;
-    std::string name;
-    std::string value;
+    std::string *name;
+    Var_Decl *value;
 
-   SYCL_Buffer_Decl(::Type::Base *t, int d, std::string n, std::string v);
+   SYCL_Buffer_Decl(::Type::Base *t, int d, std::string *n, Var_Decl *v);
+
+   SYCL_Buffer_Decl(::Type::Base *t, int d, Var_Decl *v, const std::string &n)
+    : Base(BUFFER_DECL), type(t), dimension(d), value(v) { name = new std::string(n); }
 
    void print(Printer::Base &p) const;
  };

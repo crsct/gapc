@@ -109,8 +109,8 @@ void Printer::Cpp::print(const Statement::SYCL_Buffer_Decl &stmt) {
 
   stream << indent() << 
     "sycl::buffer<" << *stmt.type << "," << stmt.dimension << "> " <<
-    stmt.name << "(sycl::range<" << stmt.dimension << ">" << 
-    "(" << stmt.value << "));" << endl;
+    *stmt.name << "(sycl::range<" << stmt.dimension << ">" << 
+    "(" << *stmt.value->name << "));" << endl;
 }
 
 void Printer::Cpp::print(const Statement::SYCL_Submit_Kernel &stmt) {
@@ -120,8 +120,10 @@ void Printer::Cpp::print(const Statement::SYCL_Submit_Kernel &stmt) {
   stream << indent() <<
     *stmt.queue->name << ".submit([&]sycl::handler &" << *stmt.context->name << "{" << endl;
   inc_indent();
+  stream << indent() << "Test" << endl;
   //TODO | FIXME add block content
-  stream << indent() << "}" << endl;
+  dec_indent();
+  stream << indent() << "});" << endl;
 }  
 
 void Printer::Cpp::print(const Statement::While &stmt) {
