@@ -113,10 +113,26 @@ void Printer::Cpp::print(const Statement::SYCL_Buffer_Decl &stmt) {
     "(" << *stmt.value->name << "));" << endl;
 }
 
+void Printer::Cpp::print(const Statement::SYCL_Accessor_Decl &stmt) {
+  assert(stmt.variable);
+  assert(stmt.conext);
+  
+  stream << indent() << "auto " << *stmt.variable->name + "_acc = sycl::accessor{"
+  << *stmt.variable->name << ", " << *stmt.context->name << ", ";
+  if (*stmt.write && *stmt.read) {
+    stream << "sycl::access_mode::read_write";
+  } else if (*stmt.write) {
+    stream << "sycl::access_mode::write";
+  } else {
+    stream << "sycl::access_mode::read";
+  }
+  stream << "};" << endl; 
+}
+
 void Printer::Cpp::print(const Statement::SYCL_Submit_Kernel &stmt) {
   assert(stmt.queue);
   assert(stmt.context);
-  
+
   stream << indent() <<
     *stmt.queue->name << ".submit([&]sycl::handler &" << *stmt.context->name << "{" << endl;
   inc_indent();

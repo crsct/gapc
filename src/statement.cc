@@ -72,6 +72,11 @@ Statement::SYCL_Buffer_Decl::SYCL_Buffer_Decl(::Type::Base *t, int d, std::strin
   : Base(BUFFER_DECL), type(t), dimension(d), name(n), value(v) {
 }
 
+Statement::SYCL_Accessor_Decl::SYCL_Accessor_Decl(Var_Decl *v, Var_Decl *c, bool *r, bool *w)
+  : Base(VAR_DECL), variable(v), context(c), read(r), write(w) {
+
+  }
+
 Statement::Var_Decl *Statement::Var_Decl::clone() const {
   Var_Decl *ret = new Var_Decl(*this);
   ret->disabled_ = disabled_;
@@ -79,6 +84,10 @@ Statement::Var_Decl *Statement::Var_Decl::clone() const {
   ret->name = name;
   ret->rhs = rhs;
   return ret;
+}
+
+void Statement::SYCL_Accessor_Decl::print(Printer::Base &p) const {
+  p.print(*this);
 }
 
 void Statement::SYCL_Submit_Kernel::print(Printer::Base &p) const {

@@ -193,6 +193,27 @@ class Increase : public Base {
   Base *copy() const;
 };
 
+
+/**
+ * @example auto aResult = sycl::accessor{results, cgh, sycl::read_write};
+ * @brief Declare a Accessor for SYCL Kernels
+ * @param variable Var_Decl name and variable to create accessor to
+ * @param context Context defaults to cgh
+ * @param access_mode Access Mode (Read or Write)
+ */
+class SYCL_Accessor_Decl : public Base {
+
+  public:
+    Var_Decl *variable;
+    Var_Decl *context;
+    bool *read;
+    bool *write;
+
+    void print(Printer::Base &p) const;
+
+    SYCL_Accessor_Decl(Var_Decl *v, Var_Decl *c, bool *r, bool *w);
+};
+
 /**
  * @example q.submit([&](sycl::handler &cgh) { ... }); 
  * @brief Submit Kernel
