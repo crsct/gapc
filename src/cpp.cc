@@ -139,12 +139,9 @@ void Printer::Cpp::print(const Statement::SYCL_Submit_Kernel &stmt) {
   assert(stmt.context);
 
   stream << indent() <<
-    *stmt.queue->name << ".submit([&]sycl::handler &" << *stmt.context->name << "{" << endl;
-  inc_indent();
-  stream << indent() << "Test" << endl;
-  //TODO | FIXME add block content
-  dec_indent();
-  stream << indent() << "});" << endl;
+    *stmt.queue->name << ".submit([&]sycl::handler &" << *stmt.context->name << ") ";
+  stream << stmt.statements;
+  stream << ");" << endl;
 }  
 
 void Printer::Cpp::print(const Statement::While &stmt) {

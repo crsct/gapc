@@ -1315,7 +1315,8 @@ Fn_Def *print_CYK(const AST &ast) {
 
     Statement::SYCL_Submit_Kernel *blk_sycl = new Statement::SYCL_Submit_Kernel(queue, new Statement::Var_Decl(new Type::External("sycl::handler&"), "cgh"));
 
-    blk_sycl->statements.push_back(new Statement::CustomCode("This works"));
+    bool* test = new bool(true);
+    blk_sycl->statements.push_back(new Statement::SYCL_Accessor_Decl(value, value, test, test));
 
     fn_cyk->stmts.push_back(blk_sycl);
 
