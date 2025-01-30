@@ -151,6 +151,7 @@ class Cpp : public Base {
     void print(const Statement::Hash_Decl &stmt);
     void print(const Statement::Marker_Decl &stmt);
 
+    void print(const Statement::SYCL_Parallel_For &stmt);
     void print(const Statement::SYCL_Accessor_Decl &stmt);
     void print(const Statement::SYCL_Submit_Kernel &stmt);
     void print(const Statement::SYCL_Buffer_Decl &stmt);

@@ -193,6 +193,25 @@ class Increase : public Base {
   Base *copy() const;
 };
 
+/**
+ * @brief creating a parallel for function in sycl
+ * @example cgh.parallel_for(sycl::range<1>(subset.size()), [=](sycl::id<1> idx) {
+ * @param context The context of the kernel
+ * @param dimension The dimension of the for loop
+ * @param size The overall size of the loop, comparable to the regular for condition
+ * @param identity identity that is given the device to access like a pointer
+ */
+ class SYCL_Parallel_For : public Block_Base {
+  public:
+    Var_Decl *context;
+    Var_Decl *dimension;
+    Var_Decl *size;
+    Var_Decl *identity;
+
+  void print(Printer::Base &p) const;
+
+  SYCL_Parallel_For(Var_Decl *c, Var_Decl *d, Var_Decl *s, Var_Decl *i);
+ };
 
 /**
  * @example auto aResult = sycl::accessor{results, cgh, sycl::read_write};

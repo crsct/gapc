@@ -81,6 +81,7 @@ void Printer::Base::print(const std::list<Statement::Base*> &stmts) {}
 void Printer::Base::print(const Statement::SYCL_Buffer_Decl &stmt) {}
 void Printer::Base::print(const Statement::SYCL_Submit_Kernel &stmt) {}
 void Printer::Base::print(const Statement::SYCL_Accessor_Decl &stmt) {}
+void Printer::Base::print(const Statement::SYCL_Parallel_For &stmt) {}
 
 
 void Printer::Base::print(const Type::List &t) {}

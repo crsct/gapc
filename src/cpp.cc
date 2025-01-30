@@ -120,8 +120,8 @@ void Printer::Cpp::print(const Statement::SYCL_Buffer_Decl &stmt) {
 
 void Printer::Cpp::print(const Statement::SYCL_Accessor_Decl &stmt) {
   assert(stmt.variable);
-  assert(stmt.conext);
-  
+  assert(stmt.context);
+
   stream << indent() << "auto " << *stmt.variable->name + "_acc = sycl::accessor{"
   << *stmt.variable->name << ", " << *stmt.context->name << ", ";
   if (*stmt.write && *stmt.read) {
@@ -132,6 +132,18 @@ void Printer::Cpp::print(const Statement::SYCL_Accessor_Decl &stmt) {
     stream << "sycl::access_mode::read";
   }
   stream << "};" << endl; 
+}
+
+void Printer::Cpp::print(const Statement::SYCL_Parallel_For &stmt) {
+  assert(stmt.context);
+  assert(stmt.size);
+  assert(stmt.dimension);
+  assert(stmt.identity);
+  
+  stream << indent() <<
+    *stmt.context->name << ".parallel_for(sycl::range<" << *stmt.dimension->rhs << ">" <<
+    *stmt.size->name << ".size()), [=](sycl::id<" << *stmt.dimension->rhs << ">" << *stmt.identity->name << ") ";
+  stream << stmt.statements << endl;
 }
 
 void Printer::Cpp::print(const Statement::SYCL_Submit_Kernel &stmt) {

@@ -22,6 +22,7 @@
 }}} */
 
 #include "cyk.hh"
+#include "statement.hh"
 #include <tuple>
 #include <vector>
 #include <list>
