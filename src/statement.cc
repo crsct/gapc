@@ -77,7 +77,11 @@ Statement::SYCL_Buffer_Decl::SYCL_Buffer_Decl(::Type::Base *t, int d, std::strin
 
 Statement::SYCL_Accessor_Decl::SYCL_Accessor_Decl(Var_Decl *v, Var_Decl *c, bool *r, bool *w)
   : Base(VAR_DECL), variable(v), context(c), read(r), write(w) {
+}
 
+Statement::SYCL_Host_Accessor_Decl::SYCL_Host_Accessor_Decl(Var_Decl *n)
+  : Base(VAR_DECL), name(n) {
+    
   }
 
 Statement::Var_Decl *Statement::Var_Decl::clone() const {
