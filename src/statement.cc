@@ -105,6 +105,10 @@ void Statement::SYCL_Buffer_Decl::print(Printer::Base &p) const {
   p.print(*this);
 }
 
+void Statement::SYCL_Host_Accessor_Decl::print(Printer::Base &p) const {
+  p.print(*this);
+}
+
 void Statement::Var_Decl::print(Printer::Base &p) const {
   p.print(*this);
 }
