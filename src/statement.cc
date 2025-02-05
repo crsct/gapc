@@ -94,6 +94,10 @@ Statement::Var_Decl *Statement::Var_Decl::clone() const {
 }
 
 
+void Statement::SYCL_Host_Accessor_Decl::print(Printer::Base &p) const {
+  p.print(*this);
+}
+
 void Statement::Var_Decl::print(Printer::Base &p) const {
   p.print(*this);
 }
