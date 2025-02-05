@@ -1318,6 +1318,7 @@ Fn_Def *print_CYK(const AST &ast) {
     bool* test = new bool(true);
     blk_sycl->statements.push_back(new Statement::SYCL_Accessor_Decl(value, value, test, test));
 
+
     fn_cyk->stmts.push_back(blk_sycl);
 
     Statement::Block *blk_parallel = new Statement::Block();
