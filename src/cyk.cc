@@ -1303,8 +1303,10 @@ Fn_Def *print_CYK(const AST &ast) {
     }
 
     int dimension = 1;
-    std::string name = "test";
-    std::string value = "test_value";
+    std::string *name = new std::string("test");
+
+    Statement::Var_Decl *value = new Statement::Var_Decl(new Type::Int, "value", new Expr::Const(4*5));
+    fn_cyk->stmts.push_back(value);
 
     fn_cyk->stmts.push_back(new Statement::SYCL_Buffer_Decl(new Type::Int, dimension, name, value));
     Statement::Var_Decl *queue = new Statement::Var_Decl(new Type::External("sycl::queue"), "q");
@@ -1315,6 +1317,9 @@ Fn_Def *print_CYK(const AST &ast) {
 
     bool* test = new bool(true);
     blk_sycl->statements.push_back(new Statement::SYCL_Accessor_Decl(value, value, test, test));
+
+
+    fn_cyk->stmts.push_back(blk_sycl);
 
     Statement::Block *blk_parallel = new Statement::Block();
 

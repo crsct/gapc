@@ -105,6 +105,12 @@ void Printer::Cpp::print(const Statement::For &stmt) {
   stream << stmt.statements;
 }
 
+void Printer::Cpp::print(const Statement::SYCL_Host_Accessor_Decl &stmt) {
+  assert(stmt.name);
+
+  stream << indent() << "sycl::host_accessor " << stmt.name->name << "_hacc{" << stmt.name->name << "};" << endl;
+}
+
 
 void Printer::Cpp::print(const Statement::SYCL_Buffer_Decl &stmt) {
   assert(stmt.type);
@@ -114,14 +120,30 @@ void Printer::Cpp::print(const Statement::SYCL_Buffer_Decl &stmt) {
 
   stream << indent() << 
     "sycl::buffer<" << *stmt.type << "," << stmt.dimension << "> " <<
-    stmt.name << "(sycl::range<" << stmt.dimension << ">" << 
-    "(" << stmt.value << "));" << endl;
+    *stmt.name << "(sycl::range<" << stmt.dimension << ">" << 
+    "(" << *stmt.value->name << "));" << endl;
+}
+
+void Printer::Cpp::print(const Statement::SYCL_Accessor_Decl &stmt) {
+  assert(stmt.variable);
+  assert(stmt.conext);
+  
+  stream << indent() << "auto " << *stmt.variable->name + "_acc = sycl::accessor{"
+  << *stmt.variable->name << ", " << *stmt.context->name << ", ";
+  if (*stmt.write && *stmt.read) {
+    stream << "sycl::access_mode::read_write";
+  } else if (*stmt.write) {
+    stream << "sycl::access_mode::write";
+  } else {
+    stream << "sycl::access_mode::read";
+  }
+  stream << "};" << endl; 
 }
 
 void Printer::Cpp::print(const Statement::SYCL_Submit_Kernel &stmt) {
   assert(stmt.queue);
   assert(stmt.context);
-  
+
   stream << indent() <<
     *stmt.queue->name << ".submit([&]sycl::handler &" << *stmt.context->name << ") ";
   stream << stmt.statements;
