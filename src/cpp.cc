@@ -105,6 +105,57 @@ void Printer::Cpp::print(const Statement::For &stmt) {
   stream << stmt.statements;
 }
 
+
+void Printer::Cpp::print(const Statement::SYCL_Buffer_Decl &stmt) {
+  assert(stmt.type);
+  assert(stmt.dimension);
+  assert(stmt.name);
+  assert(stmt.value);
+
+  stream << indent() << 
+    "sycl::buffer<" << *stmt.type << "," << stmt.dimension << "> " <<
+    *stmt.name << "(sycl::range<" << stmt.dimension << ">" << 
+    "(" << *stmt.value->name << "));" << endl;
+}
+
+void Printer::Cpp::print(const Statement::SYCL_Accessor_Decl &stmt) {
+  assert(stmt.variable);
+  assert(stmt.context);
+
+  stream << indent() << "auto " << *stmt.variable->name + "_acc = sycl::accessor{"
+  << *stmt.variable->name << ", " << *stmt.context->name << ", ";
+  if (*stmt.write && *stmt.read) {
+    stream << "sycl::access_mode::read_write";
+  } else if (*stmt.write) {
+    stream << "sycl::access_mode::write";
+  } else {
+    stream << "sycl::access_mode::read";
+  }
+  stream << "};" << endl; 
+}
+
+void Printer::Cpp::print(const Statement::SYCL_Parallel_For &stmt) {
+  assert(stmt.context);
+  assert(stmt.size);
+  assert(stmt.dimension);
+  assert(stmt.identity);
+  
+  stream << indent() <<
+    *stmt.context->name << ".parallel_for(sycl::range<" << *stmt.dimension->rhs << "> " <<
+    *stmt.size->rhs << ", [=](sycl::id<" << *stmt.dimension->rhs << "> " << *stmt.identity->name << ") ";
+  stream << stmt.statements << endl;
+}
+
+void Printer::Cpp::print(const Statement::SYCL_Submit_Kernel &stmt) {
+  assert(stmt.queue);
+  assert(stmt.context);
+
+  stream << indent() <<
+    *stmt.queue->name << ".submit([&]sycl::handler &" << *stmt.context->name << ") ";
+  stream << stmt.statements;
+  stream << ");" << endl;
+}  
+
 void Printer::Cpp::print(const Statement::While &stmt) {
   stream << indent() << "while(" << stmt.expr() << ")\n";
   stream << stmt.statements;
