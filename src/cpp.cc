@@ -141,8 +141,8 @@ void Printer::Cpp::print(const Statement::SYCL_Parallel_For &stmt) {
   assert(stmt.identity);
   
   stream << indent() <<
-    *stmt.context->name << ".parallel_for(sycl::range<" << *stmt.dimension->rhs << ">" <<
-    *stmt.size->name << ".size()), [=](sycl::id<" << *stmt.dimension->rhs << ">" << *stmt.identity->name << ") ";
+    *stmt.context->name << ".parallel_for(sycl::range<" << *stmt.dimension->rhs << "> " <<
+    *stmt.size->rhs << ", [=](sycl::id<" << *stmt.dimension->rhs << "> " << *stmt.identity->name << ") ";
   stream << stmt.statements << endl;
 }
 
