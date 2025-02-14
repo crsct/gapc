@@ -128,6 +128,7 @@ class Base {
   virtual void print(const Statement::SYCL_Submit_Kernel &stmt);
   virtual void print(const Statement::SYCL_Accessor_Decl &stmt);
   virtual void print(const Statement::SYCL_Parallel_For &stmt);
+  virtual void print(const Statement::SYCL_Host_Accessor_Decl &stmt);
 
 
   virtual void print(const Expr::Base &);

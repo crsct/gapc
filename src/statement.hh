@@ -214,6 +214,19 @@ class Increase : public Base {
  };
 
 /**
+ * @brief Declare a host accessor for Variables
+ * @example sycl::host_accessor result{results};
+ * @param name the name of the variable you want a host accessor for
+ */
+class SYCL_Host_Accessor_Decl : public Base {
+  public:
+    Var_Decl *name;
+  
+  void print(Printer::Base &p) const;
+
+  SYCL_Host_Accessor_Decl(Var_Decl *n);
+};
+/**
  * @example auto aResult = sycl::accessor{results, cgh, sycl::read_write};
  * @brief Declare a Accessor for SYCL Kernels
  * @param variable Var_Decl name and variable to create accessor to
@@ -236,8 +249,8 @@ class SYCL_Accessor_Decl : public Base {
 /**
  * @example q.submit([&](sycl::handler &cgh) { ... }); 
  * @brief Submit Kernel
- * @param q The Queue to add the Kernel to
- * @param c The Context Handler for the Kernel
+ * @param queue The Queue to add the Kernel to
+ * @param context The Context Handler for the Kernel
  */
 class SYCL_Submit_Kernel : public Block_Base {
   public:

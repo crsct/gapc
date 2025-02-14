@@ -105,6 +105,12 @@ void Printer::Cpp::print(const Statement::For &stmt) {
   stream << stmt.statements;
 }
 
+void Printer::Cpp::print(const Statement::SYCL_Host_Accessor_Decl &stmt) {
+  assert(stmt.name);
+
+  stream << indent() << "sycl::host_accessor " << stmt.name->name << "_hacc{" << stmt.name->name << "};" << endl;
+}
+
 
 void Printer::Cpp::print(const Statement::SYCL_Buffer_Decl &stmt) {
   assert(stmt.type);
