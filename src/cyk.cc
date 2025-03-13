@@ -38,8 +38,7 @@ static const char *VARNAME_InnerLoop2 = "inner_loop_2_idx";
 
 static std::string VARNAME_tile_size = "tile_size";  // NOLINT [runtime/string]
 static std::string VARNAME_max_tiles = "max_tiles";  // NOLINT [runtime/string]
-static std::string VARNAME_max_tiles_n =
-    "max_tiles_n";  // NOLINT runtime/string
+static std::string VARNAME_max_tiles_n = "max_tiles_n";  // NOLINT runtime/string
 static std::string
     // computes the maximal fitting number of tiles in one table dimension for
     // outside computation
