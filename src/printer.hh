@@ -21,21 +21,19 @@
 
 }}} */
 
-
 #ifndef SRC_PRINTER_HH_
 #define SRC_PRINTER_HH_
 
+#include <iostream>
 #include <list>
 #include <ostream>
-#include <iostream>
 #include <string>
 
-#include "statement_fwd.hh"
 #include "expr_fwd.hh"
-#include "var_acc_fwd.hh"
-#include "type_fwd.hh"
 #include "statement.hh"
-
+#include "statement_fwd.hh"
+#include "type_fwd.hh"
+#include "var_acc_fwd.hh"
 
 class Grammar;
 
@@ -44,13 +42,11 @@ class AST;
 class Options;
 class Operator;
 
-
 namespace Printer {
 class Base;
 }
 
 inline Printer::Base &endl(Printer::Base &p);
-
 
 namespace Printer {
 
@@ -60,11 +56,12 @@ class Base {
   std::string indent_string;
   void set_indent_string();
 
-  template<class T> friend inline Base &operator<<(Base &p, const T &c);
-  friend inline Base &operator<<(Base &p, std::ostream& (*fn)(std::ostream&) );
+  template <class T>
+  friend inline Base &operator<<(Base &p, const T &c);
+  friend inline Base &operator<<(Base &p, std::ostream &(*fn)(std::ostream &));
   friend Base &operator<<(Base &p, const std::string &c);
   friend Base &operator<<(Base &p, const char *c);
-  friend inline Printer::Base &::endl(Printer::Base &p);
+  friend inline Printer::Base & ::endl(Printer::Base &p);
   std::ostream &out;
 
  protected:
@@ -84,11 +81,14 @@ class Base {
   std::string gapc_call_string, gapc_version_string;
 
  public:
-  Base() : ind_count(0), out(std::cerr), line_number(0), stream(*this),
-    fwd_decls(false) {}
-  explicit Base(std::ostream &o) : ind_count(0), out(o), line_number(0),
-  stream(*this),
-    fwd_decls(false) {}
+  Base()
+      : ind_count(0),
+        out(std::cerr),
+        line_number(0),
+        stream(*this),
+        fwd_decls(false) {}
+  explicit Base(std::ostream &o)
+      : ind_count(0), out(o), line_number(0), stream(*this), fwd_decls(false) {}
 
   virtual ~Base();
 
@@ -123,18 +123,16 @@ class Base {
   virtual void print(const Statement::Marker_Decl &stmt);
   virtual void print(const Statement::Table_Decl &stmt);
 
-
   virtual void print(const Statement::SYCL_Buffer_Decl &stmt);
   virtual void print(const Statement::SYCL_Submit_Kernel &stmt);
   virtual void print(const Statement::SYCL_Accessor_Decl &stmt);
   virtual void print(const Statement::SYCL_Host_Accessor_Decl &stmt);
 
-
   virtual void print(const Expr::Base &);
   virtual void print(const Type::Base &);
   virtual void print(const Var_Acc::Base &);
 
-  virtual void print(const std::list<Statement::Base*> &stmts);
+  virtual void print(const std::list<Statement::Base *> &stmts);
 
   virtual void print(const Type::List &expr);
   virtual void print(const Type::Tuple &expr);
@@ -168,8 +166,7 @@ class Base {
   virtual void print(const Type::Backtrace &expr);
   virtual void print(const Type::Backtrace_List &expr);
 
-  virtual void print(const Type::Multi  &expr);
-
+  virtual void print(const Type::Multi &expr);
 
   virtual void header(const AST &ast);
   virtual void header_footer(const AST &ast);
@@ -186,22 +183,16 @@ class Base {
 
   virtual void set_argv(char **argv, int argc);
 
-
   virtual void print_zero_decls(const Grammar &grammar);
 };  // class Base
 
+inline Base &operator<<(Base &p, Base &(*fn)(Base &)) { return fn(p); }
 
-inline Base &operator<<(Base &p, Base& (*fn)(Base&)) {
-  return fn(p);
-}
-
-
-inline Base &operator<<(Base &p, std::ostream& (*fn)(std::ostream&)) {
+inline Base &operator<<(Base &p, std::ostream &(*fn)(std::ostream &)) {
   fn(p.out);
   p.line_number++;
   return p;
 }
-
 
 Base &operator<<(Base &p, const Fn_Def &b);
 Base &operator<<(Base &p, const Operator &b);
@@ -228,13 +219,14 @@ Base &operator<<(Base &p, const Statement::Hash_Decl &b);
 Base &operator<<(Base &p, const Statement::Marker_Decl &b);
 Base &operator<<(Base &p, const Statement::Table_Decl &b);
 
-Base &operator<<(Base &p, const std::list<Statement::Base*> &stmts);
+Base &operator<<(Base &p, const std::list<Statement::Base *> &stmts);
 
 Base &operator<<(Base &p, const Expr::Base &b);
 
 Base &operator<<(Base &p, const Var_Acc::Base &b);
 
-template<typename T> inline Base &operator<<(Base &p, const T &c) {
+template <typename T>
+inline Base &operator<<(Base &p, const T &c) {
   p.out << c;
   return p;
 }
@@ -271,12 +263,10 @@ Base &operator<<(Base &p, const Type::Multi &t);
 
 }  // namespace Printer
 
-
 inline Printer::Base &endl(Printer::Base &p) {
   p.line_number++;
   p.out << '\n';
   return p;
 }
-
 
 #endif  // SRC_PRINTER_HH_
