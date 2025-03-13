@@ -259,7 +259,6 @@ class SYCL_Buffer_Decl : public Base {
   Var_Decl *name;
   Var_Decl *value;
 
-
   SYCL_Buffer_Decl(::Type::Base *t, int d, Var_Decl *v, Var_Decl *n);
   void print(Printer::Base &p) const;
 };
