@@ -38,7 +38,8 @@ static const char *VARNAME_InnerLoop2 = "inner_loop_2_idx";
 
 static std::string VARNAME_tile_size = "tile_size";  // NOLINT [runtime/string]
 static std::string VARNAME_max_tiles = "max_tiles";  // NOLINT [runtime/string]
-static std::string VARNAME_max_tiles_n = "max_tiles_n";  // NOLINT runtime/string
+static std::string VARNAME_max_tiles_n =
+    "max_tiles_n";  // NOLINT runtime/string
 static std::string
     // computes the maximal fitting number of tiles in one table dimension for
     // outside computation
@@ -1263,8 +1264,8 @@ Fn_Def *print_CYK(const AST &ast) {
     Statement::Var_Decl *value =
         new Statement::Var_Decl(new Type::String, "value");
 
-    fn_cyk->stmts.push_back(
-        new Statement::SYCL_Buffer_Decl(new Type::Int, dimension, value, value));
+    fn_cyk->stmts.push_back(new Statement::SYCL_Buffer_Decl(
+        new Type::Int, dimension, value, value));
     Statement::Var_Decl *queue =
         new Statement::Var_Decl(new Type::External("sycl::queue"), "q");
 
