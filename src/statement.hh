@@ -252,20 +252,17 @@ class SYCL_Submit_Kernel : public Block_Base {
  * @param name
  * @param size
  */
- class SYCL_Buffer_Decl : public Base {
-  public:
-    ::Type::Base *type;
-    int dimension;
-    std::string *name;
-    Var_Decl *value;
+class SYCL_Buffer_Decl : public Base {
+ public:
+  ::Type::Base *type;
+  int dimension;
+  Var_Decl *name;
+  Var_Decl *value;
 
-   SYCL_Buffer_Decl(::Type::Base *t, int d, std::string *n, Var_Decl *v);
 
-   SYCL_Buffer_Decl(::Type::Base *t, int d, Var_Decl *v, const std::string &n)
-    : Base(BUFFER_DECL), type(t), dimension(d), value(v) { name = new std::string(n); }
-
-   void print(Printer::Base &p) const;
- };
+  SYCL_Buffer_Decl(::Type::Base *t, int d, Var_Decl *v, Var_Decl *n);
+  void print(Printer::Base &p) const;
+};
 
 class Var_Decl : public Base {
  private:

@@ -118,10 +118,9 @@ void Printer::Cpp::print(const Statement::SYCL_Buffer_Decl &stmt) {
   assert(stmt.name);
   assert(stmt.value);
 
-  stream << indent() << 
-    "sycl::buffer<" << *stmt.type << "," << stmt.dimension << "> " <<
-    *stmt.name << "(sycl::range<" << stmt.dimension << ">" << 
-    "(" << *stmt.value->name << "));" << endl;
+  stream << indent() << "sycl::buffer<" << *stmt.type << "," << stmt.dimension
+         << "> " << *stmt.name->name << "(sycl::range<" << stmt.dimension << ">"
+         << "(" << *stmt.value->name << "));" << endl;
 }
 
 void Printer::Cpp::print(const Statement::SYCL_Accessor_Decl &stmt) {
