@@ -63,8 +63,8 @@ Statement::Var_Decl::Var_Decl(::Type::Base *t, std::string *n, Expr::Base *e)
     : Base(VAR_DECL), type(t), name(n), rhs(e) {}
 
 Statement::SYCL_Buffer_Decl::SYCL_Buffer_Decl(::Type::Base *t, int d,
-                                              std::string *n, Var_Decl *v)
-    : Base(VAR_DECL), type(t), dimension(d), name(n), value(v) {}
+                                              Var_Decl *v, Var_Decl *n)
+    : Base(VAR_DECL), type(t), dimension(d), value(v), name(n) {}
 
 Statement::SYCL_Accessor_Decl::SYCL_Accessor_Decl(Var_Decl *v, Var_Decl *c,
                                                   bool *r, bool *w)

@@ -1264,7 +1264,7 @@ Fn_Def *print_CYK(const AST &ast) {
         new Statement::Var_Decl(new Type::String, "value");
 
     fn_cyk->stmts.push_back(
-        new Statement::SYCL_Buffer_Decl(new Type::Int, dimension, name, value));
+        new Statement::SYCL_Buffer_Decl(new Type::Int, dimension, value, value));
     Statement::Var_Decl *queue =
         new Statement::Var_Decl(new Type::External("sycl::queue"), "q");
 
