@@ -73,6 +73,9 @@ Statement::SYCL_Accessor_Decl::SYCL_Accessor_Decl(Var_Decl *v, Var_Decl *c,
 Statement::SYCL_Host_Accessor_Decl::SYCL_Host_Accessor_Decl(Var_Decl *n)
     : Base(VAR_DECL), name(n) {}
 
+Statement::SYCL_Submit_Kernel::SYCL_Submit_Kernel(Var_Decl *q, Var_Decl *c)
+    : Block_Base(BLOCK), queue(q), context(c) {}
+
 Statement::Var_Decl *Statement::Var_Decl::clone() const {
   Var_Decl *ret = new Var_Decl(*this);
   ret->disabled_ = disabled_;
@@ -83,6 +86,18 @@ Statement::Var_Decl *Statement::Var_Decl::clone() const {
 }
 
 void Statement::SYCL_Host_Accessor_Decl::print(Printer::Base &p) const {
+  p.print(*this);
+}
+
+void Statement::SYCL_Submit_Kernel::print(Printer::Base &p) const {
+  p.print(*this);
+}
+
+void Statement::SYCL_Accessor_Decl::print(Printer::Base &p) const {
+  p.print(*this);
+}
+
+void Statement::SYCL_Buffer_Decl::print(Printer::Base &p) const {
   p.print(*this);
 }
 
