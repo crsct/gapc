@@ -21,47 +21,38 @@
 
 }}} */
 
-
 #ifndef SRC_STATEMENT_HH_
 #define SRC_STATEMENT_HH_
 
-#include <string>
-#include <list>
 #include <cassert>
+#include <list>
+#include <string>
 #include <utility>
 
-#include "loc.hh"
 #include "bool.hh"
-
-#include "operator_fwd.hh"
-
 #include "expr_fwd.hh"
+#include "loc.hh"
+#include "operator_fwd.hh"
+#include "statement_fwd.hh"
 #include "type_fwd.hh"
 #include "var_acc_fwd.hh"
 
-#include "statement_fwd.hh"
-
-namespace Printer { class Base; }
-
+namespace Printer {
+class Base;
+}
 
 #include "statement/base.hh"
 #include "statement/block_base.hh"
 
-
 namespace Statement {
-
-
 
 class Return : public Base {
  public:
-  Return() : Base(RETURN), expr(NULL) {
-  }
+  Return() : Base(RETURN), expr(NULL) {}
 
-  explicit Return(Expr::Base *e) : Base(RETURN), expr(e) {
-  }
+  explicit Return(Expr::Base *e) : Base(RETURN), expr(e) {}
 
-  Return(Expr::Base *e, const Loc &l) : Base(RETURN, l), expr(e) {
-  }
+  Return(Expr::Base *e, const Loc &l) : Base(RETURN, l), expr(e) {}
 
   explicit Return(Var_Decl &vdecl);
 
@@ -74,46 +65,36 @@ class Return : public Base {
   Base *copy() const;
 };
 
-
 class Break : public Base {
  public:
-  Break() : Base(BREAK) {
-  }
+  Break() : Base(BREAK) {}
 
-  explicit Break(const Loc &l) : Base(BREAK, l) {
-  }
+  explicit Break(const Loc &l) : Base(BREAK, l) {}
 
   void print(Printer::Base &p) const;
 
   Base *copy() const;
 };
-
 
 class Continue : public Base {
  public:
-  Continue() : Base(CONTINUE) {
-  }
+  Continue() : Base(CONTINUE) {}
 
-  explicit Continue(const Loc &l) : Base(CONTINUE, l) {
-  }
+  explicit Continue(const Loc &l) : Base(CONTINUE, l) {}
 
   void print(Printer::Base &p) const;
 
   Base *copy() const;
 };
 
-
 class If : public Base {
  private:
-    void push(std::list<Base*> &l, Base* stmt);
+  void push(std::list<Base *> &l, Base *stmt);
 
  public:
-  If() : Base(IF), cond(NULL) {
-  }
+  If() : Base(IF), cond(NULL) {}
 
-  If(Expr::Base *c, Base *t) : Base(IF), cond(c) {
-    push(then, t);
-  }
+  If(Expr::Base *c, Base *t) : Base(IF), cond(c) { push(then, t); }
 
   If(Expr::Base *c, Base *t, const Loc &l) : Base(IF, l), cond(c) {
     push(then, t);
@@ -129,12 +110,11 @@ class If : public Base {
     push(els, e);
   }
 
-  explicit If(Expr::Base *c) : Base(IF), cond(c) {
-  }
+  explicit If(Expr::Base *c) : Base(IF), cond(c) {}
 
   Expr::Base *cond;
-  std::list<Base*> then;
-  std::list<Base*> els;
+  std::list<Base *> then;
+  std::list<Base *> els;
   void print(Printer::Base &p) const;
 
   void replace(Var_Decl &decl, Expr::Base *expr);
@@ -144,31 +124,26 @@ class If : public Base {
 
 class Switch : public Base {
  public:
-  explicit Switch(Expr::Base *c): Base(SWITCH), cond(c) {
-  }
+  explicit Switch(Expr::Base *c) : Base(SWITCH), cond(c) {}
 
   Expr::Base *cond;
-  std::list<std::pair<std::string, std::list<Base*> > > cases;
-  std::list<Base*> defaul;
+  std::list<std::pair<std::string, std::list<Base *> > > cases;
+  std::list<Base *> defaul;
 
-  std::list<Base*> *add_case(std::string *n);
+  std::list<Base *> *add_case(std::string *n);
 
   void print(Printer::Base &p) const;
 };
-
 
 class Decrease : public Base {
  public:
   std::string *name;
 
-  Decrease() : Base(DECREASE) {
-  }
+  Decrease() : Base(DECREASE) {}
 
-  explicit Decrease(std::string *n) : Base(DECREASE), name(n) {
-  }
+  explicit Decrease(std::string *n) : Base(DECREASE), name(n) {}
 
-  explicit Decrease(const Loc &l) : Base(DECREASE, l) {
-  }
+  explicit Decrease(const Loc &l) : Base(DECREASE, l) {}
 
   void print(Printer::Base &p) const;
 
@@ -179,20 +154,84 @@ class Increase : public Base {
  public:
   std::string *name;
 
-  Increase() : Base(INCREASE) {
-  }
+  Increase() : Base(INCREASE) {}
 
-  explicit Increase(std::string *n) : Base(INCREASE), name(n) {
-  }
+  explicit Increase(std::string *n) : Base(INCREASE), name(n) {}
 
-  explicit Increase(const Loc &l) : Base(INCREASE, l) {
-  }
+  explicit Increase(const Loc &l) : Base(INCREASE, l) {}
 
   void print(Printer::Base &p) const;
 
   Base *copy() const;
 };
 
+/**
+ * @brief Declare a host accessor for Variables
+ * @example sycl::host_accessor result{results};
+ * @param name the name of the variable you want a host accessor for
+ */
+class SYCL_Host_Accessor_Decl : public Base {
+ public:
+  Var_Decl *name;
+
+  void print(Printer::Base &p) const;
+
+  explicit SYCL_Host_Accessor_Decl(Var_Decl *n);
+};
+/**
+ * @example auto aResult = sycl::accessor{results, cgh, sycl::read_write};
+ * @brief Declare a Accessor for SYCL Kernels
+ * @param variable Var_Decl name and variable to create accessor to
+ * @param context Context defaults to cgh
+ * @param access_mode Access Mode (Read or Write)
+ */
+class SYCL_Accessor_Decl : public Base {
+ public:
+  Var_Decl *variable;
+  Var_Decl *context;
+  bool *read;
+  bool *write;
+
+  void print(Printer::Base &p) const;
+
+  SYCL_Accessor_Decl(Var_Decl *v, Var_Decl *c, bool *r, bool *w);
+};
+
+/**
+ * @example q.submit([&](sycl::handler &cgh) { ... });
+ * @brief Submit Kernel
+ * @param queue The Queue to add the Kernel to
+ * @param context The Context Handler for the Kernel
+ */
+class SYCL_Submit_Kernel : public Block_Base {
+ public:
+  Var_Decl *queue;
+  Var_Decl *context;
+
+  void print(Printer::Base &p) const;
+
+  SYCL_Submit_Kernel(Var_Decl *q, Var_Decl *c);
+};
+
+/**
+ * @example sycl::buffer<int, 0> results(sycl::range<1>(n*m));
+ * @brief A function to summarize and create an buffer
+ *
+ * @param type What type the buffer should hold
+ * @param dimension
+ * @param name
+ * @param size
+ */
+class SYCL_Buffer_Decl : public Base {
+ public:
+  ::Type::Base *type;
+  int dimension;
+  Var_Decl *name;
+  Var_Decl *value;
+
+  SYCL_Buffer_Decl(::Type::Base *t, int d, Var_Decl *v, Var_Decl *n);
+  void print(Printer::Base &p) const;
+};
 
 /**
  * @brief Declare a host accessor for Variables
@@ -274,39 +313,28 @@ class Var_Decl : public Base {
 
   Var_Decl(::Type::Base *t, std::string *n);
 
-
   Var_Decl(::Type::Base *t, const std::string &n)
-    : Base(VAR_DECL), type(t), rhs(NULL) {
+      : Base(VAR_DECL), type(t), rhs(NULL) {
     name = new std::string(n);
   }
 
-
   Var_Decl(::Type::Base *t, std::string *n, const Loc &l)
-    : Base(VAR_DECL, l), type(t), name(n), rhs(NULL) {
-  }
-
+      : Base(VAR_DECL, l), type(t), name(n), rhs(NULL) {}
 
   Var_Decl(::Type::Base *t, std::string *n, Expr::Base *e);
 
-
   Var_Decl(::Type::Base *t, std::string n, Expr::Base *e)
-    : Base(VAR_DECL), type(t), rhs(e) {
+      : Base(VAR_DECL), type(t), rhs(e) {
     name = new std::string(n);
   }
 
-
   Var_Decl(::Type::Base *t, std::string *n, Expr::Base *e, const Loc &l)
-    : Base(VAR_DECL, l), type(t), name(n), rhs(e) {
-  }
-
+      : Base(VAR_DECL, l), type(t), name(n), rhs(e) {}
 
   Var_Decl(::Type::Base *t, Expr::Base *e, Expr::Base *f);
   Var_Decl(const Var_Decl &v);
 
-
-  void set_rhs(Expr::Base *a) {
-    rhs = a;
-  }
+  void set_rhs(Expr::Base *a) { rhs = a; }
 
   Var_Acc::Base *left();
   Var_Acc::Base *right();
@@ -318,22 +346,14 @@ class Var_Decl : public Base {
 
   bool operator==(const Var_Decl &other) const;
 
+  void set_itr(bool b) { use_as_itr = Bool(b); }
 
-  void set_itr(bool b) {
-    use_as_itr = Bool(b);
-  }
-
-
-  bool is_itr() const {
-    return use_as_itr;
-  }
-
+  bool is_itr() const { return use_as_itr; }
 
   Var_Decl *clone() const;
 
   Base *copy() const;
 };
-
 
 // probably only for target code
 class For : public Block_Base {
@@ -343,21 +363,16 @@ class For : public Block_Base {
   Statement::Base *inc;
   bool decrement = false;
 
-  For(Var_Decl *v, Expr::Base* e)
-  : Block_Base(FOR), var_decl(v), cond(e), inc(NULL) {
-  }
-
+  For(Var_Decl *v, Expr::Base *e)
+      : Block_Base(FOR), var_decl(v), cond(e), inc(NULL) {}
 
   For(Var_Decl *v, Expr::Base *e, Statement::Base *i, const Loc &l)
-  : Block_Base(FOR, l), var_decl(v), cond(e), inc(i) {
-  }
-
+      : Block_Base(FOR, l), var_decl(v), cond(e), inc(i) {}
 
   void print(Printer::Base &p) const;
 
   Base *copy() const;
 };
-
 
 class Foreach : public Block_Base {
  public:
@@ -375,7 +390,6 @@ class Foreach : public Block_Base {
   void set_iteration(bool b);
 };
 
-
 class Sorter : public Block_Base {
  public:
   std::string *op;
@@ -383,9 +397,7 @@ class Sorter : public Block_Base {
 
   Sorter(Operator *op, Var_Decl *l);
 
-  Sorter(std::string *op, Var_Decl *l)
-      : Block_Base(SORTER), op(op),  list(l) {
-  }
+  Sorter(std::string *op, Var_Decl *l) : Block_Base(SORTER), op(op), list(l) {}
 
   void print(Printer::Base &p) const;
 };
@@ -411,27 +423,20 @@ class Var_Assign : public Base {
   Base *copy() const;
 };
 
-
 class Block : public Block_Base {
  public:
-  Block() : Block_Base(BLOCK) {
-  }
+  Block() : Block_Base(BLOCK) {}
 
-
-  Block(const std::list<Base*> &stmts, const Loc &l)
-    : Block_Base(BLOCK, l) {
+  Block(const std::list<Base *> &stmts, const Loc &l) : Block_Base(BLOCK, l) {
     statements = stmts;
   }
 
   void print(Printer::Base &p) const;
 
-  void push_back(Base* b) {
-    statements.push_back(b);
-  }
+  void push_back(Base *b) { statements.push_back(b); }
 
   Base *copy() const;
 };
-
 
 class CustomCode : public Base {
   /* A "CustomCode" statement is an arbitrary line of string that get's
@@ -440,17 +445,14 @@ class CustomCode : public Base {
  public:
   std::string line_of_code;
 
-  explicit CustomCode(std::string line_of_code) :
-      Base(CUSTOMCODE), line_of_code(line_of_code) {
-  }
+  explicit CustomCode(std::string line_of_code)
+      : Base(CUSTOMCODE), line_of_code(line_of_code) {}
 
   void print(Printer::Base &p) const;
 
   Base *copy() const;
 };
 
-
 }  // namespace Statement
-
 
 #endif  // SRC_STATEMENT_HH_

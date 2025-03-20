@@ -39,8 +39,8 @@ static const char *VARNAME_InnerLoop2 = "inner_loop_2_idx";
 static std::string VARNAME_tile_size = "tile_size";  // NOLINT [runtime/string]
 static std::string VARNAME_max_tiles = "max_tiles";  // NOLINT [runtime/string]
 static std::string VARNAME_max_tiles_n = "max_tiles_n";  // NOLINT runtime/string
-static std::string 
-    // computes the maximal fitting number of tils in one table dimension for
+static std::string
+    // computes the maximal fitting number of tiles in one table dimension for
     // outside computation
     VARNAME_num_tiles_per_axis = "num_tiles_per_axis";
 
@@ -1400,12 +1400,6 @@ Fn_Def *print_CYK(const AST &ast) {
                    ast.grammar()->topological_ord(),
                    ast.checkpoint && ast.checkpoint->cyk,
                    CYKmode::OPENMP_SERIAL_OUTSIDE, ast);
-    }
-      add_nt_calls(
-          *stmts_outsideC, new std::list<std::string*>(),
-          ast.grammar()->topological_ord(),
-          ast.checkpoint && ast.checkpoint->cyk,
-          CYKmode::OPENMP_SERIAL_OUTSIDE, ast);
     }
   }
 

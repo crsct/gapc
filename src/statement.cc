@@ -21,68 +21,57 @@
 
 }}} */
 
-
-#include <cassert>
-#include <cstdlib>
-#include <algorithm>
-#include <list>
-#include <utility>
-#include <string>
-
 #include "statement.hh"
 
-#include "var_acc.hh"
-
-#include "expr.hh"
-#include "printer.hh"
+#include <algorithm>
+#include <cassert>
+#include <cstdlib>
+#include <list>
+#include <string>
+#include <utility>
 
 #include "cc.hh"
-
-#include "type.hh"
-
+#include "expr.hh"
 #include "operator.hh"
+#include "printer.hh"
+#include "statement/base.hh"
+#include "type.hh"
+#include "var_acc.hh"
 
-Statement::Sorter::Sorter(Operator *op, Var_Decl *l) :
-  Block_Base(SORTER), list(l) {
-    this->op = op->object;
+Statement::Sorter::Sorter(Operator *op, Var_Decl *l)
+    : Block_Base(SORTER), list(l) {
+  this->op = op->object;
 }
 
 Statement::Var_Decl::Var_Decl(::Type::Base *t, Expr::Base *e, Expr::Base *f)
-  : Base(VAR_DECL), type(t), rhs(f) {
-  Expr::Vacc *v = dynamic_cast<Expr::Vacc*>(e);
+    : Base(VAR_DECL), type(t), rhs(f) {
+  Expr::Vacc *v = dynamic_cast<Expr::Vacc *>(e);
   assert(v);
   name = v->name();
   assert(name);
 }
 
-
 Statement::Var_Decl::Var_Decl(const Var_Decl &v)
-  : Base(VAR_DECL), name(NULL), rhs(NULL) {
+    : Base(VAR_DECL), name(NULL), rhs(NULL) {
   type = v.type;
 }
 
-
 Statement::Var_Decl::Var_Decl(::Type::Base *t, std::string *n)
-  : Base(VAR_DECL), type(t), name(n), rhs(NULL) {
-}
-
+    : Base(VAR_DECL), type(t), name(n), rhs(NULL) {}
 
 Statement::Var_Decl::Var_Decl(::Type::Base *t, std::string *n, Expr::Base *e)
-  : Base(VAR_DECL), type(t), name(n), rhs(e) {
-}
+    : Base(VAR_DECL), type(t), name(n), rhs(e) {}
 
 Statement::SYCL_Buffer_Decl::SYCL_Buffer_Decl(::Type::Base *t, int d,
                                               Var_Decl *v, Var_Decl *n)
     : Base(VAR_DECL), type(t), dimension(d), value(v), name(n) {}
 
-Statement::SYCL_Accessor_Decl::SYCL_Accessor_Decl(Var_Decl *v, Var_Decl *c, bool *r, bool *w)
-  : Base(VAR_DECL), variable(v), context(c), read(r), write(w) {
-}
+Statement::SYCL_Accessor_Decl::SYCL_Accessor_Decl(Var_Decl *v, Var_Decl *c,
+                                                  bool *r, bool *w)
+    : Base(VAR_DECL), variable(v), context(c), read(r), write(w) {}
 
 Statement::SYCL_Host_Accessor_Decl::SYCL_Host_Accessor_Decl(Var_Decl *n)
-  : Base(VAR_DECL), name(n) {
-    
-  }
+    : Base(VAR_DECL), name(n) {}
 
 Statement::SYCL_Submit_Kernel::SYCL_Submit_Kernel(Var_Decl *q, Var_Decl *c)
     : Block_Base(BLOCK), queue(q), context(c) {}
@@ -95,7 +84,6 @@ Statement::Var_Decl *Statement::Var_Decl::clone() const {
   ret->rhs = rhs;
   return ret;
 }
-
 
 void Statement::SYCL_Host_Accessor_Decl::print(Printer::Base &p) const {
   p.print(*this);
@@ -115,146 +103,99 @@ void Statement::SYCL_Buffer_Decl::print(Printer::Base &p) const {
 
 void Statement::Var_Decl::print(Printer::Base &p) const { p.print(*this); }
 
+void Statement::Return::print(Printer::Base &p) const { p.print(*this); }
 
-void Statement::Return::print(Printer::Base &p) const {
-  p.print(*this);
-}
+void Statement::Break::print(Printer::Base &p) const { p.print(*this); }
 
+void Statement::Decrease::print(Printer::Base &p) const { p.print(*this); }
 
-void Statement::Break::print(Printer::Base &p) const {
-  p.print(*this);
-}
+void Statement::Increase::print(Printer::Base &p) const { p.print(*this); }
 
-void Statement::Decrease::print(Printer::Base &p) const {
-  p.print(*this);
-}
+void Statement::Continue::print(Printer::Base &p) const { p.print(*this); }
 
-void Statement::Increase::print(Printer::Base &p) const {
-  p.print(*this);
-}
+void Statement::If::print(Printer::Base &p) const { p.print(*this); }
 
-void Statement::Continue::print(Printer::Base &p) const {
-  p.print(*this);
-}
+void Statement::Switch::print(Printer::Base &p) const { p.print(*this); }
 
+void Statement::For::print(Printer::Base &p) const { p.print(*this); }
 
-void Statement::If::print(Printer::Base &p) const {
-  p.print(*this);
-}
+void Statement::Foreach::print(Printer::Base &p) const { p.print(*this); }
 
+void Statement::Sorter::print(Printer::Base &p) const { p.print(*this); }
 
-void Statement::Switch::print(Printer::Base &p) const {
-  p.print(*this);
-}
+void Statement::Var_Assign::print(Printer::Base &p) const { p.print(*this); }
 
-void Statement::For::print(Printer::Base &p) const {
-  p.print(*this);
-}
+void Statement::Block::print(Printer::Base &p) const { p.print(*this); }
 
-
-void Statement::Foreach::print(Printer::Base &p) const {
-  p.print(*this);
-}
-
-void Statement::Sorter::print(Printer::Base &p) const {
-  p.print(*this);
-}
-
-
-void Statement::Var_Assign::print(Printer::Base &p) const {
-  p.print(*this);
-}
-
-
-void Statement::Block::print(Printer::Base &p) const {
-  p.print(*this);
-}
-
-void Statement::CustomCode::print(Printer::Base &p) const {
-  p.print(*this);
-}
+void Statement::CustomCode::print(Printer::Base &p) const { p.print(*this); }
 
 Statement::Var_Assign::Var_Assign(Var_Decl &a)
-  : Base(VAR_ASSIGN), op_(Expr::EQ), rhs(NULL) {
+    : Base(VAR_ASSIGN), op_(Expr::EQ), rhs(NULL) {
   acc = new Var_Acc::Plain(a);
 }
 
-
 Statement::Var_Assign::Var_Assign(Var_Decl &a, Var_Decl &b)
-  : Base(VAR_ASSIGN), op_(Expr::EQ) {
+    : Base(VAR_ASSIGN), op_(Expr::EQ) {
   acc = new Var_Acc::Plain(a);
   rhs = new Expr::Vacc(b);
 }
 
-
 Statement::Var_Assign::Var_Assign(Var_Decl &a, Expr::Base *b)
-  : Base(VAR_ASSIGN), op_(Expr::EQ), rhs(b) {
+    : Base(VAR_ASSIGN), op_(Expr::EQ), rhs(b) {
   acc = new Var_Acc::Plain(a);
 }
 
-
 Statement::Var_Assign::Var_Assign(Var_Acc::Base *a, Expr::Base *b, const Loc &l)
-  : Base(VAR_ASSIGN, l), op_(Expr::EQ), acc(a), rhs(b) {
-}
-
+    : Base(VAR_ASSIGN, l), op_(Expr::EQ), acc(a), rhs(b) {}
 
 Statement::Var_Assign::Var_Assign(Var_Acc::Base *a, Expr::Base *b)
-  : Base(VAR_ASSIGN), op_(Expr::EQ), acc(a), rhs(b) {
-}
-
+    : Base(VAR_ASSIGN), op_(Expr::EQ), acc(a), rhs(b) {}
 
 Statement::Var_Assign::Var_Assign(Var_Acc::Base *a, Var_Decl &v)
-  : Base(VAR_ASSIGN), op_(Expr::EQ), acc(a) {
+    : Base(VAR_ASSIGN), op_(Expr::EQ), acc(a) {
   rhs = new Expr::Vacc(v);
 }
 
-
 Var_Acc::Base *Statement::Var_Decl::left() {
-  ::Type::Tuple *t = dynamic_cast< ::Type::Tuple*>(type->simple());
+  ::Type::Tuple *t = dynamic_cast< ::Type::Tuple *>(type->simple());
   assert(t);
   assert(t->list.size() == 2);
-  std::list<std::pair< ::Type::Name*, std::string*>*>::iterator i =
-    t->list.begin();
-  Var_Acc::Comp *ret = new Var_Acc::Comp(new Var_Acc::Plain(name),
-                                         (*i)->second);
+  std::list<std::pair< ::Type::Name *, std::string *> *>::iterator i =
+      t->list.begin();
+  Var_Acc::Comp *ret =
+      new Var_Acc::Comp(new Var_Acc::Plain(name), (*i)->second);
   if (use_as_itr) {
     ret->set_itr(true);
   }
   return ret;
 }
-
 
 Var_Acc::Base *Statement::Var_Decl::right() {
-  ::Type::Tuple *t = dynamic_cast< ::Type::Tuple*>(type->simple());
+  ::Type::Tuple *t = dynamic_cast< ::Type::Tuple *>(type->simple());
   assert(t);
   assert(t->list.size() == 2);
-  std::list<std::pair< ::Type::Name*, std::string*>*>::iterator i =
-    t->list.begin();
+  std::list<std::pair< ::Type::Name *, std::string *> *>::iterator i =
+      t->list.begin();
   ++i;
-  Var_Acc::Comp *ret = new Var_Acc::Comp(new Var_Acc::Plain(name),
-                                         (*i)->second);
+  Var_Acc::Comp *ret =
+      new Var_Acc::Comp(new Var_Acc::Plain(name), (*i)->second);
   if (use_as_itr) {
     ret->set_itr(true);
   }
   return ret;
 }
 
-
-Statement::Return::Return(Var_Decl &vdecl)
-  : Base(RETURN) {
+Statement::Return::Return(Var_Decl &vdecl) : Base(RETURN) {
   expr = new Expr::Vacc(vdecl);
 }
 
-
-Statement::Return::Return(std::string *n)
-  : Base(RETURN) {
+Statement::Return::Return(std::string *n) : Base(RETURN) {
   expr = new Expr::Vacc(n);
 }
 
-
-void Statement::If::push(std::list<Base*> &l, Base* stmt) {
+void Statement::If::push(std::list<Base *> &l, Base *stmt) {
   if (stmt->is(BLOCK)) {
-    Block *b = dynamic_cast<Block*>(stmt);
+    Block *b = dynamic_cast<Block *>(stmt);
     assert(b);
     l.insert(l.end(), b->statements.begin(), b->statements.end());
   } else {
@@ -262,11 +203,7 @@ void Statement::If::push(std::list<Base*> &l, Base* stmt) {
   }
 }
 
-
-Statement::Var_Decl *Statement::Var_Decl::var_decl() {
-  return this;
-}
-
+Statement::Var_Decl *Statement::Var_Decl::var_decl() { return this; }
 
 void Statement::Var_Decl::replace(Var_Decl &decl, Expr::Base *expr) {
   if (!rhs) {
@@ -277,7 +214,6 @@ void Statement::Var_Decl::replace(Var_Decl &decl, Expr::Base *expr) {
   }
 }
 
-
 void Statement::Foreach::replace(Var_Decl &decl, Expr::Base *expr) {
   if (*container == decl) {
     Expr::Vacc *vacc = expr->vacc();
@@ -287,9 +223,7 @@ void Statement::Foreach::replace(Var_Decl &decl, Expr::Base *expr) {
   }
 }
 
-
 #include "expr/fn_call.hh"
-
 
 void Statement::If::replace(Var_Decl &decl, Expr::Base *expr) {
   for (Expr::iterator i = Expr::begin(cond); i != Expr::end(); ++i) {
@@ -301,11 +235,9 @@ void Statement::If::replace(Var_Decl &decl, Expr::Base *expr) {
   }
 }
 
-
 bool Statement::Var_Decl::operator==(const Var_Decl &other) const {
   return this == &other;
 }
-
 
 void Statement::Iterator::fwd() {
   while (true) {
@@ -327,13 +259,11 @@ void Statement::Iterator::fwd() {
   }
 }
 
-
 Statement::Iterator &Statement::Iterator::operator++() {
-  if ((*i)->is(Statement::BLOCK) ||
-      (*i)->is(Statement::FOREACH) ||
+  if ((*i)->is(Statement::BLOCK) || (*i)->is(Statement::FOREACH) ||
       (*i)->is(Statement::FOR)) {
     Statement::Base *t = *i;
-    std::list<Statement::Base*> *l =  t->stmts();
+    std::list<Statement::Base *> *l = t->stmts();
     ++i;
     stack.push(boost::make_tuple(i, j, list));
     i = l->begin();
@@ -342,7 +272,7 @@ Statement::Iterator &Statement::Iterator::operator++() {
     fwd();
   } else if ((*i)->is(Statement::IF)) {
     Statement::Base *t = *i;
-    Statement::If *s = dynamic_cast<Statement::If*>(t);
+    Statement::If *s = dynamic_cast<Statement::If *>(t);
     assert(s);
     ++i;
     stack.push(boost::make_tuple(i, j, list));
@@ -358,38 +288,29 @@ Statement::Iterator &Statement::Iterator::operator++() {
   return *this;
 }
 
-
-std::list<Statement::Base*> *Statement::Switch::add_case(std::string *n) {
+std::list<Statement::Base *> *Statement::Switch::add_case(std::string *n) {
   std::string *name = new std::string(*n);
-  std::list<Base*> cont;
-  std::pair<std::string, std::list<Base*> > newCase = std::make_pair(
-    *name,  cont);
+  std::list<Base *> cont;
+  std::pair<std::string, std::list<Base *> > newCase =
+      std::make_pair(*name, cont);
   cases.push_back(newCase);
   return &cases.back().second;
 }
 
-
 Statement::Foreach::Foreach(Var_Decl *i, Var_Decl *l)
-  : Block_Base(FOREACH), elem(i), container(l), iteration(true) {
+    : Block_Base(FOREACH), elem(i), container(l), iteration(true) {
   assert(elem);
   assert(container);
 }
-
 
 void Statement::Foreach::set_itr(bool x) {
   // elem = elem->clone();
   elem->set_itr(x);
 }
 
-void Statement::Foreach::set_iteration(bool b) {
-    iteration = b;
-}
+void Statement::Foreach::set_iteration(bool b) { iteration = b; }
 
-
-void Statement::Var_Assign::set_op(Expr::Type t) {
-  op_ = t;
-}
-
+void Statement::Var_Assign::set_op(Expr::Type t) { op_ = t; }
 
 std::string Statement::Var_Assign::op_str() const {
   switch (op_) {
@@ -405,7 +326,6 @@ std::string Statement::Var_Assign::op_str() const {
   }
 }
 
-
 Statement::Base *Statement::Return::copy() const {
   Return *o = new Return(*this);
   if (expr) {
@@ -418,7 +338,6 @@ Statement::Base *Statement::Break::copy() const {
   Break *o = new Break(*this);
   return o;
 }
-
 
 Statement::Base *Statement::Continue::copy() const {
   Continue *o = new Continue(*this);
@@ -442,15 +361,15 @@ Statement::Base *Statement::If::copy() const {
   }
   o->then.clear();
   o->els.clear();
-  for (std::list<Base*>::const_iterator i=then.begin(); i != then.end(); ++i) {
+  for (std::list<Base *>::const_iterator i = then.begin(); i != then.end();
+       ++i) {
     o->then.push_back((*i)->copy());
   }
-  for (std::list<Base*>::const_iterator i=els.begin(); i != els.end(); ++i) {
+  for (std::list<Base *>::const_iterator i = els.begin(); i != els.end(); ++i) {
     o->els.push_back((*i)->copy());
   }
   return o;
 }
-
 
 Statement::Base *Statement::Var_Decl::copy() const {
   Var_Decl *o = new Var_Decl(*this);
@@ -462,7 +381,6 @@ Statement::Base *Statement::Var_Decl::copy() const {
   }
   return o;
 }
-
 
 Statement::Base *Statement::For::copy() const {
   For *o = new For(*this);
@@ -476,7 +394,6 @@ Statement::Base *Statement::For::copy() const {
   return o;
 }
 
-
 Statement::Base *Statement::Var_Assign::copy() const {
   Var_Assign *o = new Var_Assign(*this);
   if (rhs) {
@@ -485,13 +402,11 @@ Statement::Base *Statement::Var_Assign::copy() const {
   return o;
 }
 
-
 Statement::Base *Statement::Block::copy() const {
   Block *o = new Block(*this);
   Block_Base::copy(*o);
   return o;
 }
-
 
 Statement::Base *Statement::CustomCode::copy() const {
   CustomCode *o = new CustomCode(*this);

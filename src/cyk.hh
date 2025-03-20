@@ -4,7 +4,8 @@
       a system to compile algebraic dynamic programming programs)
 
     Copyright (C) 2011-2023  Stefan Janssen
-         email: stefan.m.janssen@gmail.com or stefan.janssen@computational.bio.uni-giessen.de
+         email: stefan.m.janssen@gmail.com or
+stefan.janssen@computational.bio.uni-giessen.de
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,28 +26,28 @@
 #define SRC_CYK_HH_
 
 #include <list>
-#include <vector>
 #include <string>
 #include <tuple>
+#include <vector>
 
 #include "ast.hh"
-#include "printer.hh"
-#include "cpp.hh"
-#include "statement_fwd.hh"
-#include "expr.hh"
 #include "const.hh"
+#include "cpp.hh"
+#include "expr.hh"
 #include "fn_def.hh"
+#include "printer.hh"
 #include "statement/fn_call.hh"
+#include "statement_fwd.hh"
 #include "var_acc.hh"
 
-static const char * const OUTSIDE_IDX_SUFFIX = "_outside";
+static const char *const OUTSIDE_IDX_SUFFIX = "_outside";
 
-std::tuple<std::list<Statement::Base*>*, std::string*>
-get_tile_computation(const AST &ast, std::string *name_maxtilen,
-                     Statement::Var_Decl *input_seq, bool just_tilesize);
+std::tuple<std::list<Statement::Base *> *, std::string *> get_tile_computation(
+    const AST &ast, std::string *name_maxtilen, Statement::Var_Decl *input_seq,
+    bool just_tilesize);
 
-Statement::Var_Decl*
-get_tile_computation_outside(Statement::Var_Decl *input_seq);
+Statement::Var_Decl *get_tile_computation_outside(
+    Statement::Var_Decl *input_seq);
 
 Fn_Def *print_CYK(const AST &ast);
 
