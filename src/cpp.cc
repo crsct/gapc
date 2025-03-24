@@ -129,7 +129,7 @@ void Printer::Cpp::print(const Statement::SYCL_Buffer_Decl &stmt) {
 
 void Printer::Cpp::print(const Statement::SYCL_Accessor_Decl &stmt) {
   assert(stmt.variable);
-  assert(stmt.conext);
+  assert(stmt.context);
 
   stream << indent() <<
   "auto " << *stmt.variable->name + "_acc = sycl::accessor{"
