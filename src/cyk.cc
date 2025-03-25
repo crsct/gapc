@@ -1253,6 +1253,7 @@ Fn_Def *print_CYK(const AST &ast) {
   }
 
   // ==== multi thread version (only single-track possible for now)
+  // TODO:  Add elifdef _SYCL
   fn_cyk->stmts.push_back(new Statement::CustomCode("#else"));
   // FIXME generalize for multi-track ...
   if (ast.grammar()->axiom->tracks() == 1) {
