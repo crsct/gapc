@@ -43,7 +43,7 @@ struct Options {
   Options()
     :  inline_nts(false), out(NULL), h_stream_(NULL), m_stream_(NULL),
       approx_table_design(false), tab_everything(false),
-      cyk(false), backtrack(false), sample(false), subopt(false),
+      cyk(false), sycl(false), backtrack(false), sample(false), subopt(false),
       kbacktrack(false),
       no_coopt(false),
       no_coopt_class(false),
@@ -92,6 +92,7 @@ struct Options {
   bool approx_table_design;
   bool tab_everything;
   bool cyk;
+  bool sycl;
   bool backtrack;
   bool sample;
   bool subopt;
