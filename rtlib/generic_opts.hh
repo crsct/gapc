@@ -49,6 +49,9 @@ extern "C" {
 
 // define _XOPEN_SOURCE=500
 
+#define _SYCL
+// FIXME lazy implementation
+
 namespace gapc {
 
 class OptException : public std::exception {
@@ -244,6 +247,9 @@ class Opts {
 #ifdef _OPENMP
              "L:"
 #endif
+#ifdef _SYCL
+             "L:"
+#endif
              "hd:r:k:H:", long_opts, nullptr)) != -1) {
         switch (o) {
           case 'f' :
@@ -369,6 +375,11 @@ class Opts {
             break;
 #endif
 #ifdef _OPENMP
+          case 'L' :
+            tile_size = std::atoi(optarg);
+            break;
+#endif
+#ifdef _SYCL
           case 'L' :
             tile_size = std::atoi(optarg);
             break;
