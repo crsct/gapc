@@ -142,7 +142,7 @@ class CYKloop {
 };
 
 enum CYKmode {SINGLETHREAD, OPENMP_PARALLEL, OPENMP_SERIAL,
-              SINGLETHREAD_OUTSIDE,
+              SINGLETHREAD_OUTSIDE, SYCL,
               OPENMP_PARALLEL_OUTSIDE, OPENMP_SERIAL_OUTSIDE};
 
 CYKloop get_for_column(Expr::Vacc *running_boundary,
@@ -530,94 +530,144 @@ std::list<Statement::Base*> *cyk_traversal_multithread_parallel(const AST &ast,
   Expr::Vacc *idx_col = ast.grammar()->right_running_indices[track];
   Expr::Base *row_start = idx_col->plus(new Expr::Const(1));
 
-  CYKloop row = get_for_row(idx_row, row_start, z, with_checkpoint, mode);
-  CYKloop col = get_for_column(idx_col,
-      z, z->plus(new Expr::Vacc(tile_size)), with_checkpoint, mode);
-  col.loop->statements.push_back(row.loop);
-  Expr::Base *start_z = new Expr::Const(0);
-  if (with_checkpoint) {
-    start_z = new Expr::Vacc(new std::string(std::string(
-        var_ol1) + "_start"));
-  }
-  Statement::For *loop_z = get_for_openMP(z, start_z,
-      new Expr::Vacc(name_maxtilen), &tile_size_decl);
-  if (with_checkpoint) {
-    loop_z->statements.push_back(mutex_lock());
-  }
-  loop_z->statements.push_back(col.loop);
-  // code to wait for threads to finish
-  if (with_checkpoint) {
-    loop_z->statements.push_back(new Statement::CustomCode(
-        "#pragma omp ordered"));
-    Statement::Block *blk_omp = new Statement::Block();
-    blk_omp->statements.push_back(new Statement::CustomCode(
-        "// force omp to wait for all threads to finish their current batch "
-        "(of size tile_size)"));
-    blk_omp->statements.push_back(new Statement::Var_Assign(
-        new Var_Acc::Plain(new std::string(var_ol1)),
-        (new Expr::Vacc(new std::string(var_ol1)))->
-          plus(new Expr::Vacc(tile_size))));
-    blk_omp->statements.push_back(mutex_unlock());
-    loop_z->statements.push_back(blk_omp);
-  }
-  stmts->push_back(loop_z);
+  if (mode == CYKmode::SYCL) {
+    CYKloop row = get_for_row(idx_row, row_start, new Expr::Times(z, new Expr::Vacc(tile_size)), with_checkpoint, mode);
+    CYKloop col = get_for_column(idx_col,
+        new Expr::Times(z, new Expr::Vacc(tile_size)), new Expr::Plus(new Expr::Times(z, new Expr::Vacc(tile_size)), new Expr::Vacc(tile_size)), with_checkpoint, mode);
+    col.loop->statements.push_back(row.loop);
+    Expr::Base *start_z = new Expr::Const(0);
+    if (with_checkpoint) {
+      start_z = new Expr::Vacc(new std::string(std::string(
+          var_ol1) + "_start"));
+    }
+    Statement::SYCL_Parallel_For *loop_z = new Statement::SYCL_Parallel_For(1,
+      new Expr::Vacc(new std::string("h")),
+      new Expr::Div(new Expr::Vacc(name_maxtilen), new Expr::Vacc(tile_size)),
+      z);
 
-  // part B: code for the actual parallel tile computation
-  CYKloop rowB = get_for_row(idx_row, new Expr::Vacc(*x),
-      (new Expr::Vacc(*x))->minus(new Expr::Vacc(tile_size)),
-      with_checkpoint, mode);
-  CYKloop colB = get_for_column(idx_col,
-      y, y->plus(new Expr::Vacc(tile_size)), with_checkpoint, mode);
-  colB.loop->statements.push_back(rowB.loop);
+    loop_z->statements.push_back(col.loop);
 
-  Expr::Base *start_y = z;
-  if (with_checkpoint) {
-    start_y = new Expr::Cond(
-        new Expr::Vacc(new std::string(std::string(
-            var_il2) + "_loaded")),
-        z,
-        new Expr::Vacc(new std::string(std::string(
-            var_il2) + "_start")));
-  }
-  Statement::For *loop_y = get_for_openMP(y, start_y,
-      new Expr::Vacc(name_maxtilen), &tile_size_decl);
-  // produce: unsigned int x = y - z + tile_size;
-  if (with_checkpoint) {
-    loop_y->statements.push_back(new Statement::CustomCode(
-        "++inner_loop_2_idx_loaded;"));
-    loop_y->statements.push_back(mutex_lock());
-  }
-  loop_y->statements.push_back(x);
-  loop_y->statements.push_back(colB.loop);
-  if (with_checkpoint) {
-    std::vector<Statement::Base*> *omp_wait =
-      get_wait_omp(var_ol2, var_il2, new Expr::Vacc(tile_size),
-                   z->name(), false);
-    loop_y->statements.insert(loop_y->statements.end(),
-                              omp_wait->begin(), omp_wait->end());
-  }
+    stmts->push_back(loop_z);
 
+    // part B: code for the actual parallel tile computation
+    CYKloop rowB = get_for_row(idx_row, new Expr::Vacc(*x),
+        (new Expr::Vacc(*x))->minus(new Expr::Vacc(tile_size)),
+        with_checkpoint, mode);
+    CYKloop colB = get_for_column(idx_col,
+        y, y->plus(new Expr::Vacc(tile_size)), with_checkpoint, mode);
+    colB.loop->statements.push_back(rowB.loop);
 
-  Expr::Vacc *start_z2 = new Expr::Vacc(tile_size);
-  if (with_checkpoint) {
-    start_z2 = new Expr::Vacc(new std::string(std::string(
-        var_ol2) + "_start"));
-  }
-  loop_z = get_for_openMP(z, start_z2, new Expr::Vacc(name_maxtilen),
-      &tile_size_decl);
-  if (with_checkpoint) {
-    loop_z->statements.push_back(new Statement::CustomCode(
-        "#pragma omp for ordered schedule(dynamic)"));
+    Expr::Base *start_y = z;
+
+    // Statement::For *loop_y = get_for_openMP(y, start_y,
+        // new Expr::Vacc(name_maxtilen), &tile_size_decl);
+
+    Statement::SYCL_Parallel_For *loop_y = new Statement::SYCL_Parallel_For(1,
+      new Expr::Vacc(new std::string("h")),
+      new Expr::Vacc(name_maxtilen),
+      new Expr::Vacc(new std::string("z")));
+
+    loop_y->statements.push_back(x);
+    loop_y->statements.push_back(colB.loop);
+
+    Expr::Vacc *start_z2 = new Expr::Vacc(tile_size);
+
+    Statement::For *loop = get_for_openMP(z, start_z2, new Expr::Vacc(name_maxtilen),
+        &tile_size_decl);
+    loop->statements.push_back(loop_y);
+
+    stmts->push_back(loop);
   } else {
-    loop_z->statements.push_back(new Statement::CustomCode("#pragma omp for"));
-  }
-  loop_z->statements.push_back(loop_y);
-  if (with_checkpoint) {
-    loop_z->statements.push_back(new Statement::Var_Assign(new Var_Acc::Plain(
-        new std::string(var_il2)), z));
-  }
+    CYKloop row = get_for_row(idx_row, row_start, z, with_checkpoint, mode);
+    CYKloop col = get_for_column(idx_col,
+        z, z->plus(new Expr::Vacc(tile_size)), with_checkpoint, mode);
+    col.loop->statements.push_back(row.loop);
+    Expr::Base *start_z = new Expr::Const(0);
+    if (with_checkpoint) {
+      start_z = new Expr::Vacc(new std::string(std::string(
+          var_ol1) + "_start"));
+    }
+    Statement::For *loop_z = get_for_openMP(z, start_z,
+        new Expr::Vacc(name_maxtilen), &tile_size_decl);
+    if (with_checkpoint) {
+      loop_z->statements.push_back(mutex_lock());
+    }
+    loop_z->statements.push_back(col.loop);
+    // code to wait for threads to finish
+    if (with_checkpoint) {
+      loop_z->statements.push_back(new Statement::CustomCode(
+          "#pragma omp ordered"));
+      Statement::Block *blk_omp = new Statement::Block();
+      blk_omp->statements.push_back(new Statement::CustomCode(
+          "// force omp to wait for all threads to finish their current batch "
+          "(of size tile_size)"));
+      blk_omp->statements.push_back(new Statement::Var_Assign(
+          new Var_Acc::Plain(new std::string(var_ol1)),
+          (new Expr::Vacc(new std::string(var_ol1)))->
+            plus(new Expr::Vacc(tile_size))));
+      blk_omp->statements.push_back(mutex_unlock());
+      loop_z->statements.push_back(blk_omp);
+    }
+    stmts->push_back(loop_z);
 
-  stmts->push_back(loop_z);
+    // part B: code for the actual parallel tile computation
+    CYKloop rowB = get_for_row(idx_row, new Expr::Vacc(*x),
+        (new Expr::Vacc(*x))->minus(new Expr::Vacc(tile_size)),
+        with_checkpoint, mode);
+    CYKloop colB = get_for_column(idx_col,
+        y, y->plus(new Expr::Vacc(tile_size)), with_checkpoint, mode);
+    colB.loop->statements.push_back(rowB.loop);
+
+    Expr::Base *start_y = z;
+    if (with_checkpoint) {
+      start_y = new Expr::Cond(
+          new Expr::Vacc(new std::string(std::string(
+              var_il2) + "_loaded")),
+          z,
+          new Expr::Vacc(new std::string(std::string(
+              var_il2) + "_start")));
+    }
+    Statement::For *loop_y = get_for_openMP(y, start_y,
+        new Expr::Vacc(name_maxtilen), &tile_size_decl);
+    // produce: unsigned int x = y - z + tile_size;
+    if (with_checkpoint) {
+      loop_y->statements.push_back(new Statement::CustomCode(
+          "++inner_loop_2_idx_loaded;"));
+      loop_y->statements.push_back(mutex_lock());
+    }
+    loop_y->statements.push_back(x);
+    loop_y->statements.push_back(colB.loop);
+    if (with_checkpoint) {
+      std::vector<Statement::Base*> *omp_wait =
+        get_wait_omp(var_ol2, var_il2, new Expr::Vacc(tile_size),
+                    z->name(), false);
+      loop_y->statements.insert(loop_y->statements.end(),
+                                omp_wait->begin(), omp_wait->end());
+    }
+
+
+    Expr::Vacc *start_z2 = new Expr::Vacc(tile_size);
+    if (with_checkpoint) {
+      start_z2 = new Expr::Vacc(new std::string(std::string(
+          var_ol2) + "_start"));
+    }
+
+    loop_z = get_for_openMP(z, start_z2, new Expr::Vacc(name_maxtilen),
+        &tile_size_decl);
+    if (with_checkpoint) {
+      loop_z->statements.push_back(new Statement::CustomCode(
+          "#pragma omp for ordered schedule(dynamic)"));
+    } else {
+      loop_z->statements.push_back(new Statement::CustomCode("#pragma omp for"));
+    }
+    loop_z->statements.push_back(loop_y);
+    if (with_checkpoint) {
+      loop_z->statements.push_back(new Statement::Var_Assign(new Var_Acc::Plain(
+          new std::string(var_il2)), z));
+    }
+
+    stmts->push_back(loop_z);
+  }
 
   return stmts;
 }
@@ -964,15 +1014,21 @@ std::list<Statement::Base*> *add_nt_calls(std::list<Statement::Base*> &stmts,
   bool contains_nested_for = false;
   for (std::list<Statement::Base*>::iterator s = stmts.begin();
        s != stmts.end(); ++s) {
+    // recurse into next block?
+    if ((*s)->is(Statement::BLOCK)) {
+      Statement::SYCL_Parallel_For *block = dynamic_cast<Statement::SYCL_Parallel_For*>(*s);
+      std::list<Statement::Base*> *new_stmts = add_nt_calls(block->statements, loop_vars, orderedNTs, with_checkpoint, mode, ast);
+    }
     // recurse into next for loop
-    if ((*s)->is(Statement::FOR)) {
+    else if((*s)->is(Statement::FOR)) {
       contains_nested_for = true;
       Statement::For *fl = dynamic_cast<Statement::For*>(*s);
       std::list<std::string*> *next_loop_vars = new std::list<std::string*>();
       next_loop_vars->insert(
           next_loop_vars->end(), loop_vars->begin(), loop_vars->end());
       if (((mode != CYKmode::OPENMP_PARALLEL) &&
-          (mode != CYKmode::OPENMP_PARALLEL_OUTSIDE)) ||
+          (mode != CYKmode::OPENMP_PARALLEL_OUTSIDE) &&
+          (mode != CYKmode::SYCL)) ||
           (fl->var_decl->name->find("t_", 0) == 0)) {
         // openMP code adds in loops that do not traverse NT indices. Only add
         // loop variable, if it regard to NT indices, which all start with t_
@@ -1008,6 +1064,7 @@ std::list<Statement::Base*> *add_nt_calls(std::list<Statement::Base*> &stmts,
   if (((mode == CYKmode::OPENMP_PARALLEL) ||
        (mode == CYKmode::SINGLETHREAD_OUTSIDE) ||
        (mode == CYKmode::OPENMP_PARALLEL_OUTSIDE) ||
+       (mode == CYKmode::SYCL) ||
        (mode == CYKmode::OPENMP_SERIAL_OUTSIDE)) && contains_nested_for) {
     // don't add NT calls in for loops that is not the innermost loop, if in
     // multi threaded mode.
@@ -1038,7 +1095,8 @@ std::list<Statement::Base*> *add_nt_calls(std::list<Statement::Base*> &stmts,
     if ((*i)->is_partof_outside() == (
         (mode != CYKmode::SINGLETHREAD_OUTSIDE) &&
         (mode != CYKmode::OPENMP_PARALLEL_OUTSIDE) &&
-        (mode != CYKmode::OPENMP_SERIAL_OUTSIDE))) {
+        (mode != CYKmode::OPENMP_SERIAL_OUTSIDE) &&
+        (mode != CYKmode::SYCL))) {
       continue;
     }
     std::list<Expr::Base*> *args = new std::list<Expr::Base*>();
@@ -1051,6 +1109,7 @@ std::list<Statement::Base*> *add_nt_calls(std::list<Statement::Base*> &stmts,
         Expr::Vacc *idx = (*i)->left_indices.at(t)->vacc();
         if ((mode == CYKmode::SINGLETHREAD_OUTSIDE) ||
             (mode == CYKmode::OPENMP_PARALLEL_OUTSIDE) ||
+            (mode == CYKmode::SYCL) ||
             (mode == CYKmode::OPENMP_SERIAL_OUTSIDE)) {
           idx = new Expr::Vacc(new std::string(
               *idx->name() + OUTSIDE_IDX_SUFFIX));
@@ -1090,6 +1149,7 @@ std::list<Statement::Base*> *add_nt_calls(std::list<Statement::Base*> &stmts,
         Expr::Vacc *idx = (*i)->right_indices.at(t)->vacc();
         if ((mode == CYKmode::SINGLETHREAD_OUTSIDE) ||
             (mode == CYKmode::OPENMP_PARALLEL_OUTSIDE) ||
+            (mode == CYKmode::SYCL) ||
             (mode == CYKmode::OPENMP_SERIAL_OUTSIDE)) {
           idx = new Expr::Vacc(new std::string(
               *idx->name() + OUTSIDE_IDX_SUFFIX));
@@ -1219,43 +1279,8 @@ Fn_Def *print_CYK(const AST &ast) {
     }
   }
 
-  // ==== single thread version
-  fn_cyk->stmts.push_back(new Statement::CustomCode("#ifndef _OPENMP"));
-  // recursively reverse iterate through tracks and create nested for loop
-  // structures
-  // add NT calls to traversal structure
-  std::list<Statement::Base*> *stmts = cyk_traversal_singlethread(
-      ast, CYKmode::SINGLETHREAD);
-  std::list<Statement::Base*> *new_stmts = add_nt_calls(*stmts,
-      new std::list<std::string*>(), ast.grammar()->topological_ord(),
-      ast.checkpoint && ast.checkpoint->cyk, CYKmode::SINGLETHREAD, ast);
-  stmts->insert(stmts->end(), new_stmts->begin(), new_stmts->end());
-  // finally add traversal structure with NT calls to function body
-  if (ast.outside_generation()) {
-    fn_cyk->stmts.push_back(new Statement::CustomCode(
-      "// start computing inside DP matrices only ..."));
-  }
-  fn_cyk->stmts.insert(fn_cyk->stmts.end(), stmts->begin(), stmts->end());
-
-  if (ast.outside_generation()) {
-    fn_cyk->stmts.push_back(new Statement::CustomCode(
-      "// ... now compute outside DP matrices"));
-    fn_cyk->stmts.push_back(new Statement::CustomCode(
-      "// they are by definition quadratic as every sub-word must "
-      "be returned"));
-    stmts = cyk_traversal_singlethread(ast, CYKmode::SINGLETHREAD_OUTSIDE);
-    std::list<Statement::Base*> *new_stmts = add_nt_calls(*stmts,
-        new std::list<std::string*>(), ast.grammar()->topological_ord(),
-        ast.checkpoint && ast.checkpoint->cyk, CYKmode::SINGLETHREAD_OUTSIDE,
-        ast);
-    stmts->insert(stmts->end(), new_stmts->begin(), new_stmts->end());
-    fn_cyk->stmts.insert(fn_cyk->stmts.end(), stmts->begin(), stmts->end());
-  }
-
-  // ==== multi thread version (only single-track possible for now)
-  // TODO:  Add elifdef _SYCL
-  fn_cyk->stmts.push_back(new Statement::CustomCode("#else"));
-  // FIXME generalize for multi-track ...
+  // ==== multi thread version with openmp (only single-track possible for now)
+  fn_cyk->stmts.push_back(new Statement::CustomCode("#ifdef _OPENMP"));
   if (ast.grammar()->axiom->tracks() == 1) {
     std::string *name_maxtilen = new std::string("max_tiles_n");
     std::vector<Statement::Var_Decl*>::const_reverse_iterator it_stmt_seq =
@@ -1301,28 +1326,7 @@ Fn_Def *print_CYK(const AST &ast) {
         }
       }
     }
-
-    int dimension = 1;
-    std::string name = "test";
-    Statement::Var_Decl  *value = new Statement::Var_Decl(
-      new Type::String, "test_value");
-
-    fn_cyk->stmts.push_back(
-      new Statement::SYCL_Buffer_Decl(new Type::Int, dimension, value, value));
-
-    Statement::Var_Decl *queue = new Statement::Var_Decl(
-      new Type::External("sycl::queue"), "q");
-
-    fn_cyk->stmts.push_back(queue);
-
-    Statement::SYCL_Submit_Kernel *blk_sycl = new Statement::SYCL_Submit_Kernel(
-      queue, new Statement::Var_Decl(
-        new Type::External("sycl::handler&"), "cgh"));
-
-    bool* test = new bool(true);
-    blk_sycl->statements.push_back(
-      new Statement::SYCL_Accessor_Decl(value, value, test, test));
-
+    fn_cyk->stmts.push_back(new Statement::CustomCode("#pragma omp parallel"));
     Statement::Block *blk_parallel = new Statement::Block();
 
     if (ast.checkpoint && ast.checkpoint->cyk) {
@@ -1446,6 +1450,222 @@ Fn_Def *print_CYK(const AST &ast) {
           ast.checkpoint && ast.checkpoint->cyk,
           CYKmode::OPENMP_SERIAL_OUTSIDE, ast);
     }
+  }
+  // ==== multi thread version with sycl
+  fn_cyk->stmts.push_back(new Statement::CustomCode("#elif defined(_SYCL)"));
+  // FIXME generalize for multi-track ...
+  if (ast.grammar()->axiom->tracks() == 1) {
+    std::string *name_maxtilen = new std::string("max_tiles_n");
+    std::vector<Statement::Var_Decl*>::const_reverse_iterator it_stmt_seq =
+        ast.seq_decls.rbegin();
+
+    // FIXME abstract from unsigned int, int -> perhaps wait for OpenMP 3
+    // since OpenMP < 3 doesn't allow unsigned int in workshared fors
+
+    // header
+    if (ast.checkpoint && ast.checkpoint->cyk) {
+      std::string suffix = "";
+      std::string step = "tile_size";
+      for (int io = 0; io < 2; ++io) {  // iterate through inside and outside
+        fn_cyk->stmts.push_back(new Statement::CustomCode(
+            "bool " + std::string(VARNAME_OuterLoop1) + suffix +
+            "_loaded = !load_checkpoint || !" + VARNAME_OuterLoop1 + suffix +
+            ";"));
+        fn_cyk->stmts.push_back(new Statement::CustomCode(
+            "bool " + std::string(VARNAME_OuterLoop2) + suffix +
+            "_loaded = !load_checkpoint || !" + VARNAME_OuterLoop2 + suffix +
+            ";"));
+        fn_cyk->stmts.push_back(new Statement::CustomCode(
+            "int " + std::string(VARNAME_InnerLoop2) + suffix +
+            "_loaded = !load_checkpoint || !" + VARNAME_InnerLoop2 + suffix +
+            ";"));
+        fn_cyk->stmts.push_back(new Statement::CustomCode(
+            "int " + std::string(VARNAME_OuterLoop1) + suffix +
+            "_start = (" + VARNAME_OuterLoop1 + suffix + "_loaded) ? 0 : " +
+            VARNAME_OuterLoop1 + suffix + ";"));
+        fn_cyk->stmts.push_back(new Statement::CustomCode(
+            "int " + std::string(VARNAME_OuterLoop2) + suffix +
+            "_start = (" + VARNAME_OuterLoop2 + suffix +
+            "_loaded) ? " + step + " : " +
+            VARNAME_OuterLoop2 + suffix + ";"));
+        fn_cyk->stmts.push_back(new Statement::CustomCode(
+            "int " + std::string(VARNAME_InnerLoop2) + suffix +
+            "_start = " + VARNAME_InnerLoop2 + suffix + ";"));
+        if (!ast.grammar()->is_partof_outside()) {
+          break;
+        } else {
+          suffix = OUTSIDE_IDX_SUFFIX;
+          step = "1";
+        }
+      }
+    }
+
+    int dimension = 1;
+    std::string name = "test";
+    Statement::Var_Decl  *value = new Statement::Var_Decl(
+      new Type::String, "test_value");
+
+    fn_cyk->stmts.push_back(
+      new Statement::SYCL_Buffer_Decl(new Type::Int, dimension, value, value));
+
+    Statement::Var_Decl *queue = new Statement::Var_Decl(
+      new Type::External("sycl::queue"), "q");
+
+    fn_cyk->stmts.push_back(queue);
+
+    Statement::SYCL_Submit_Kernel *blk_sycl = new Statement::SYCL_Submit_Kernel(
+      queue, new Statement::Var_Decl(
+        new Type::External("sycl::handler&"), "cgh"));
+
+    bool* test = new bool(true);
+    blk_sycl->statements.push_back(
+      new Statement::SYCL_Accessor_Decl(value, value, test, test));
+
+    Statement::Block *blk_parallel = new Statement::Block();
+
+    // parallel part
+    std::list<Statement::Base*> *stmts = cyk_traversal_multithread_parallel(
+        ast, *it_stmt_seq, &VARNAME_tile_size, name_maxtilen,
+        ast.checkpoint && ast.checkpoint->cyk, CYKmode::SYCL);
+        // ast.checkpoint && ast.checkpoint->cyk, CYKmode::OPENMP_PARALLEL);
+    // inject NT calls
+    std::list<Statement::Base*> *new_stmts = add_nt_calls(*stmts,
+        new std::list<std::string*>(), ast.grammar()->topological_ord(),
+        ast.checkpoint && ast.checkpoint->cyk, CYKmode::OPENMP_PARALLEL, ast);
+    stmts->insert(stmts->end(), new_stmts->begin(), new_stmts->end());
+
+    blk_parallel->statements.insert(blk_parallel->statements.end(),
+        stmts->begin(), stmts->end());
+    fn_cyk->stmts.push_back(blk_parallel);
+
+    // serial part
+    stmts = cyk_traversal_singlethread(ast, CYKmode::OPENMP_SERIAL);
+    // inject NT calls
+    std::list<Statement::Base*> *new_serial_stmts = add_nt_calls(
+        *stmts, new std::list<std::string*>(), ast.grammar()->topological_ord(),
+        ast.checkpoint && ast.checkpoint->cyk, CYKmode::OPENMP_SERIAL, ast);
+    stmts->insert(stmts->end(), new_serial_stmts->begin(),
+        new_serial_stmts->end());
+    fn_cyk->stmts.insert(fn_cyk->stmts.end(), stmts->begin(), stmts->end());
+
+    if (ast.outside_generation()) {
+      fn_cyk->stmts.push_back(new Statement::CustomCode(
+        "// ... now compute outside DP matrices"));
+      Expr::Vacc *tl = new Expr::Vacc(&VARNAME_tile_size);
+      /* since tiles shall always be complete squares, we cannot touch the main
+       * anti-diagonal and thus leave a triangular space. This triangle must be
+       * at most tile_size - 1 in size.
+       * We divide (without rest, since we operate on integer) the remaining
+       * sequence size by the tile_size and multiply with tile_size to obtain
+       * the suffix of the input sequence which can be tiled */
+      Expr::Fn_Call *seqsize = new Expr::Fn_Call(new std::string("size"));
+        dynamic_cast<Expr::Fn_Call*>(seqsize)->add_arg(
+            (*ast.seq_decls.at(0)).name);
+        dynamic_cast<Expr::Fn_Call*>(seqsize)->is_obj = Bool(true);
+      // max_tiles_n = ((t_0_seq.size() - (tile_size - 1)) / tile_size) *
+      // tile_size;
+      Statement::Var_Decl *max_tiles = new Statement::Var_Decl(
+          new Type::Int,
+          VARNAME_num_tiles_per_axis,
+          new Expr::Cond(
+              new Expr::Less(tl, seqsize->minus(new Expr::Const(1))),
+              new Expr::Div(seqsize->minus(tl->minus(new Expr::Const(1))), tl),
+              new Expr::Const(0)));
+      fn_cyk->stmts.push_back(max_tiles);
+
+      Statement::If *input_large_enough = new Statement::If(
+          new Expr::Greater(seqsize, tl));
+      input_large_enough->then.push_back(new Statement::CustomCode(
+          "#pragma omp parallel"));
+      Statement::Block *blk_parallel_outside = new Statement::Block();
+      blk_parallel_outside->statements.push_back(new Statement::CustomCode(
+          "// OPENMP < 3 requires signed int here ..."));
+
+    // parallel part
+      // part A
+      std::list<Statement::Base*> *stmts_outsideA =
+          cyk_traversal_multithread_outside(ast, seqsize,
+              &VARNAME_tile_size, max_tiles,
+              ast.checkpoint && ast.checkpoint->cyk,
+              CYKmode::OPENMP_PARALLEL_OUTSIDE, "A");
+      // inject NT calls
+      add_nt_calls(
+          *stmts_outsideA, new std::list<std::string*>(),
+          ast.grammar()->topological_ord(),
+          ast.checkpoint && ast.checkpoint->cyk,
+          CYKmode::OPENMP_PARALLEL_OUTSIDE, ast);
+      blk_parallel_outside->statements.insert(
+          blk_parallel_outside->statements.end(),
+          stmts_outsideA->begin(), stmts_outsideA->end());
+
+      // part B
+      std::list<Statement::Base*> *stmts_outsideB =
+          cyk_traversal_multithread_outside(ast, seqsize,
+              &VARNAME_tile_size, max_tiles,
+              ast.checkpoint && ast.checkpoint->cyk,
+              CYKmode::OPENMP_PARALLEL_OUTSIDE, "B");
+      add_nt_calls(
+              *stmts_outsideB, new std::list<std::string*>(),
+              ast.grammar()->topological_ord(),
+              ast.checkpoint && ast.checkpoint->cyk,
+              CYKmode::OPENMP_PARALLEL_OUTSIDE, ast);
+      blk_parallel_outside->statements.insert(
+          blk_parallel_outside->statements.end(),
+          stmts_outsideB->begin(), stmts_outsideB->end());
+
+      blk_parallel_outside->statements.push_back(new Statement::CustomCode(
+              "// end parallel"));
+      input_large_enough->then.push_back(blk_parallel_outside);
+      fn_cyk->stmts.push_back(input_large_enough);
+
+      // part C = serial part
+      std::list<Statement::Base*> *stmts_outsideC =
+          cyk_traversal_multithread_outside(ast, seqsize,
+              &VARNAME_tile_size, max_tiles,
+              ast.checkpoint && ast.checkpoint->cyk,
+              CYKmode::OPENMP_SERIAL_OUTSIDE, "C");
+      fn_cyk->stmts.insert(
+          fn_cyk->stmts.end(),
+          stmts_outsideC->begin(), stmts_outsideC->end());
+      add_nt_calls(
+          *stmts_outsideC, new std::list<std::string*>(),
+          ast.grammar()->topological_ord(),
+          ast.checkpoint && ast.checkpoint->cyk,
+          CYKmode::OPENMP_SERIAL_OUTSIDE, ast);
+    }
+  }
+
+  // ==== single thread version
+  fn_cyk->stmts.push_back(new Statement::CustomCode("#else"));
+  // recursively reverse iterate through tracks and create nested for loop
+  // structures
+  // add NT calls to traversal structure
+  std::list<Statement::Base*> *stmts = cyk_traversal_singlethread(
+      ast, CYKmode::SINGLETHREAD);
+  std::list<Statement::Base*> *new_stmts = add_nt_calls(*stmts,
+      new std::list<std::string*>(), ast.grammar()->topological_ord(),
+      ast.checkpoint && ast.checkpoint->cyk, CYKmode::SINGLETHREAD, ast);
+  stmts->insert(stmts->end(), new_stmts->begin(), new_stmts->end());
+  // finally add traversal structure with NT calls to function body
+  if (ast.outside_generation()) {
+    fn_cyk->stmts.push_back(new Statement::CustomCode(
+      "// start computing inside DP matrices only ..."));
+  }
+  fn_cyk->stmts.insert(fn_cyk->stmts.end(), stmts->begin(), stmts->end());
+
+  if (ast.outside_generation()) {
+    fn_cyk->stmts.push_back(new Statement::CustomCode(
+      "// ... now compute outside DP matrices"));
+    fn_cyk->stmts.push_back(new Statement::CustomCode(
+      "// they are by definition quadratic as every sub-word must "
+      "be returned"));
+    stmts = cyk_traversal_singlethread(ast, CYKmode::SINGLETHREAD_OUTSIDE);
+    std::list<Statement::Base*> *new_stmts = add_nt_calls(*stmts,
+        new std::list<std::string*>(), ast.grammar()->topological_ord(),
+        ast.checkpoint && ast.checkpoint->cyk, CYKmode::SINGLETHREAD_OUTSIDE,
+        ast);
+    stmts->insert(stmts->end(), new_stmts->begin(), new_stmts->end());
+    fn_cyk->stmts.insert(fn_cyk->stmts.end(), stmts->begin(), stmts->end());
   }
 
   fn_cyk->stmts.push_back(new Statement::CustomCode("#endif"));
