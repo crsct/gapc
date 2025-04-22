@@ -23,6 +23,18 @@ testdata/unittest/expr_parser.hh
 testdata/unittest/expr_parser.output
 testdata/unittest/stack.hh
 
+# maybe just for me?
+testdata/
+share/
+local/
+include/
+debug/
+gapc
+**/gapc
+**/*.so
+**/*.*pio
+benchmark
+
 # config files
 config.log
 config.mf
