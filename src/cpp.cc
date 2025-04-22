@@ -114,6 +114,16 @@ void Printer::Cpp::print(const Statement::SYCL_Host_Accessor_Decl &stmt) {
   << endl;
 }
 
+void Printer::Cpp::print(const Statement::SYCL_Parallel_For &stmt) {
+  assert(stmt.size);
+  assert(stmt.handler);
+  assert(stmt.identity);
+
+  stream << indent() << *stmt.handler
+  << ".parallel_for(sycl::range<" << stmt.dimension << "> " << *stmt.size
+  << ", [=](id<" << stmt.dimension << "> " << *stmt.identity << " "
+  << stmt.statements << ");" << endl;
+}
 
 void Printer::Cpp::print(const Statement::SYCL_Buffer_Decl &stmt) {
   assert(stmt.type);

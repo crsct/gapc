@@ -227,7 +227,7 @@ class SYCL_Accessor_Decl : public Base {
 };
 
 /**
- * @example q.submit([&](sycl::handler &cgh) { ... }); 
+ * @example q.submit([&](sycl::handler &cgh) { ... });
  * @brief Submit Kernel
  * @param queue The Queue to add the Kernel to
  * @param context The Context Handler for the Kernel
@@ -243,9 +243,29 @@ class SYCL_Submit_Kernel : public Block_Base {
 };
 
 /**
+ * @example cgh.parallel_for(sycl::range<1>(subset.size()), [=](sycl::id<1> idx) { ... }
+ * @brief Parallelize a for loop
+ * @param dimension
+ * @param size
+ * @param handler
+ * @param identity
+ */
+class SYCL_Parallel_For : public Block_Base {
+  public:
+    int dimension;
+    Expr::Base *size;
+    Expr::Base *handler;
+    Expr::Base *identity;
+
+    SYCL_Parallel_For(int d, Expr::Base *h, Expr::Base *s, Expr::Base *i);
+
+    void print(Printer::Base &p) const;
+};
+
+/**
  * @example sycl::buffer<int, 0> results(sycl::range<1>(n*m));
  * @brief A function to summarize and create an buffer
- * 
+ *
  * @param type What type the buffer should hold
  * @param dimension
  * @param name

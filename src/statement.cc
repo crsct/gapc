@@ -90,6 +90,10 @@ Statement::SYCL_Submit_Kernel::SYCL_Submit_Kernel(Var_Decl *q, Var_Decl *c)
   : Block_Base(BLOCK), queue(q), context(c) {
   }
 
+Statement::SYCL_Parallel_For::SYCL_Parallel_For(int d, Expr::Base *h, Expr::Base *s, Expr::Base *i)
+  : Block_Base(BLOCK), dimension(d), handler(h), size(s), identity(i) {
+  }
+
 Statement::Var_Decl *Statement::Var_Decl::clone() const {
   Var_Decl *ret = new Var_Decl(*this);
   ret->disabled_ = disabled_;
@@ -113,6 +117,10 @@ void Statement::SYCL_Submit_Kernel::print(Printer::Base &p) const {
 }
 
 void Statement::SYCL_Host_Accessor_Decl::print(Printer::Base &p) const {
+  p.print(*this);
+}
+
+void Statement::SYCL_Parallel_For::print(Printer::Base &p) const {
   p.print(*this);
 }
 
